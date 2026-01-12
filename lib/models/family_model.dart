@@ -15,6 +15,7 @@ class FamilyMemberModel extends Equatable {
     required this.photoUrl,
   });
 
+  //obtain an instance from a Map - for fetching
   factory FamilyMemberModel.fromMap(Map<String, dynamic> map, String id) {
     return FamilyMemberModel(
       id: id,
@@ -23,6 +24,16 @@ class FamilyMemberModel extends Equatable {
       cardStatus: map['card_status'] ?? '',
       photoUrl: map['photoUrl'] ?? '',
     );
+  }
+
+  // obtain a Map from the object - for saving
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'gender': gender,
+      'card_status': cardStatus,
+      'photoUrl': photoUrl,
+    };
   }
 
   @override

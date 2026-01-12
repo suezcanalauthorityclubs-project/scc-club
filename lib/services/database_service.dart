@@ -3,48 +3,54 @@ import '../models/member_model.dart';
 import '../models/family_model.dart';
 
 class DatabaseService {
-  // create firestore instance
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  /// retrieve full member data including sub-collections
-  Future<MemberModel?> getMemberFullData(String memberId) async {
+  // retrieve full member details including family members
+  Future<MemberModel?> getFullMemberDetails(String memberId) async {
     try {
-      // 1. retrieve main member document
-      DocumentSnapshot memberDoc = 
-          await _db.collection('main_membership').doc(memberId).get();
+      var memberDoc = await _db.collection('main_membership').doc(memberId).get();
+      if (!memberDoc.exists) return null;
 
-      if (!memberDoc.exists) return null; // if member does not exist
-
-      // retrieve main data as map
-      Map<String, dynamic> mainData = memberDoc.data() as Map<String, dynamic>;
-
-      // 2. retrieve children from the sub-collection of this member
-      QuerySnapshot childrenSnap = 
-          await memberDoc.reference.collection('children').get();
-      
-      List<ChildModel> childrenList = childrenSnap.docs
-          .map((doc) => ChildModel.fromMap(doc.data() as Map<String, dynamic>))
+      var childrenSnap = await memberDoc.reference.collection('children').get();
+      var children = childrenSnap.docs
+          .map((doc) => FamilyMemberModel.fromMap(doc.data(), doc.id))
           .toList();
 
-      // 3. retrieve wives from the sub-collection of this member
-      QuerySnapshot wivesSnap = 
-          await memberDoc.reference.collection('wives').get();
-      
-      List<WifeModel> wivesList = wivesSnap.docs
-          .map((doc) => WifeModel.fromMap(doc.data() as Map<String, dynamic>))
+      var wivesSnap = await memberDoc.reference.collection('wives').get();
+      var wives = wivesSnap.docs
+          .map((doc) => FamilyMemberModel.fromMap(doc.data(), doc.id))
           .toList();
 
-      //  4. construct and return the full MemberModel
       return MemberModel.fromFirestore(
-        mainData, 
+        memberDoc.data()!, 
         memberDoc.id, 
-        children: childrenList, 
-        wives: wivesList
+        children: children, 
+        wives: wives
       );
-      
     } catch (e) {
-      print("Error fetching member data: $e");
-      rethrow; //   propagate the error
+      throw Exception("Error fetching: $e");
+    }
+  }
+
+  // upload member data (Create/Update)
+  Future<void> uploadMember(MemberModel member) async {
+    try {
+      DocumentReference memberRef = _db.collection('main_membership').doc(member.id);
+      
+      //upload main member data
+      await memberRef.set(member.toMap());
+
+      // upload children
+      for (var child in member.children) {
+        await memberRef.collection('children').doc(child.id).set(child.toMap());
+      }
+
+      // upload spouses
+      for (var wife in member.wives) {
+        await memberRef.collection('wives').doc(wife.id).set(wife.toMap());
+      }
+    } catch (e) {
+      throw Exception("Error uploading: $e");
     }
   }
 }

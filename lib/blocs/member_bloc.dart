@@ -1,28 +1,23 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../services/database_service.dart';
 import 'member_event.dart';
 import 'member_state.dart';
+import '../services/database_service.dart';
 
 class MemberBloc extends Bloc<MemberEvent, MemberState> {
-  final DatabaseService _databaseService;
+  final DatabaseService _service;
 
-  //create bloc with initial state
-  MemberBloc(this._databaseService) : super(MemberInitial()) {
-    
-    // handle FetchMemberData event
+  MemberBloc(this._service) : super(MemberInitial()) {
     on<FetchMemberData>((event, emit) async {
-      emit(MemberLoading()); // loading state
-      
+      emit(MemberLoading());
       try {
-        final member = await _databaseService.getMemberFullData(event.membershipId);
-        
+        final member = await _service.getFullMemberDetails(event.membershipId);
         if (member != null) {
-          emit(MemberSuccess(member)); // emit success state with member data
+          emit(MemberSuccess(member));
         } else {
-          emit(const MemberFailure("رقم العضوية غير موجود")); 
+          emit(const MemberFailure("العضوية غير موجودة"));
         }
       } catch (e) {
-        emit(MemberFailure("حدث خطأ غير متوقع: ${e.toString()}"));
+        emit(MemberFailure(e.toString()));
       }
     });
   }
