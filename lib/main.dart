@@ -13,23 +13,23 @@ final Map<String, dynamic> mySampleData = {
   "main_membership": {
     "1036711": {
       "membership_id": "1036711",
-      "membership_type": 1,
+      "membership_type": "هيئة",
       "name": "أحمد بدر خميس أحمد",
-      "job": "مهندس أول",
+      "job": "مهندس مساعد مدير أعمال",
       "mobile_number": "01280017104",
       "marital_status": "متزوج",
       "national_id": "29001260100691",
       "membership_status": "سارية",
       "card_expiry_date": "2026-12-31",
       "dependents": 3,
-      "photoUrl": "https://via.placeholder.com/300x300.png?text=Photo",
+      "photoUrl": "https://placehold.co/300x300.png?text=Main+Member",
       "memberships": {
         "beach": true,
         "golf": true,
         "yacht": true,
         "tennis": true,
         "knighthood": true,
-        "rowing": true
+        "rowing": true,
       },
       "wives": {
         "1": {
@@ -37,8 +37,8 @@ final Map<String, dynamic> mySampleData = {
           "name": "منة الله أشرف",
           "gender": "أنثى",
           "card_status": "يصدر",
-          "photoUrl": "https://via.placeholder.com/300x300.png?text=Photo"
-        }
+          "photoUrl": "https://placehold.co/300x300.png?text=Wife",
+        },
       },
       "children": {
         "1": {
@@ -46,24 +46,24 @@ final Map<String, dynamic> mySampleData = {
           "name": "بدر الدين أحمد بدر خميس",
           "gender": "ذكر",
           "card_status": "يصدر",
-          "photoUrl": "https://via.placeholder.com/300x300.png?text=Photo"
+          "photoUrl": "https://placehold.co/300x300.png?text=Child",
         },
         "2": {
           "child_id": "2",
           "name": "عبدالرحمن أحمد بدر خميس",
           "gender": "ذكر",
           "card_status": "يصدر",
-          "photoUrl": "https://via.placeholder.com/300x300.png?text=Photo"
-        }
-      }
-    }
-  }
+          "photoUrl": "https://placehold.co/300x300.png?text=Child",
+        },
+      },
+    },
+  },
 };
 
 void main() async {
   // Ensure Flutter engine is ready
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize Firebase with the generated options
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   debugPrint("--- [DEBUG]: Firebase Connected Successfully ---");
@@ -71,7 +71,7 @@ void main() async {
   // TRIGGER DATA UPLOAD (Uncomment the line below to seed Firestore)
   try {
     final firestoreService = FirestoreService();
-   // await firestoreService.uploadSampleData(mySampleData);
+    // await firestoreService.uploadSampleData(mySampleData);
     debugPrint("--- [SUCCESS]: Sample data uploaded to Firestore! ---");
   } catch (e) {
     debugPrint("--- [ERROR]: Failed to upload data: $e ---");

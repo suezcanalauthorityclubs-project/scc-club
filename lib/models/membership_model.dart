@@ -15,7 +15,13 @@ abstract class Dependent {
 }
 
 class Wife extends Dependent {
-  Wife({required super.id, required super.name, required super.gender, required super.cardStatus, required super.photoUrl});
+  Wife({
+    required super.id,
+    required super.name,
+    required super.gender,
+    required super.cardStatus,
+    required super.photoUrl,
+  });
 
   factory Wife.fromMap(Map<String, dynamic> data) {
     return Wife(
@@ -29,7 +35,13 @@ class Wife extends Dependent {
 }
 
 class Child extends Dependent {
-  Child({required super.id, required super.name, required super.gender, required super.cardStatus, required super.photoUrl});
+  Child({
+    required super.id,
+    required super.name,
+    required super.gender,
+    required super.cardStatus,
+    required super.photoUrl,
+  });
 
   factory Child.fromMap(Map<String, dynamic> data) {
     return Child(
@@ -44,7 +56,7 @@ class Child extends Dependent {
 
 class Membership {
   final String membershipId;
-  final int membershipType;
+  final String membershipType;
   final String name;
   final String job;
   final String mobileNumber;
@@ -78,7 +90,7 @@ class Membership {
   factory Membership.fromMap(Map<String, dynamic> data, String id) {
     return Membership(
       membershipId: data['membership_id'] ?? id,
-      membershipType: data['membership_type'] ?? 0,
+      membershipType: data['membership_type'] ?? "",
       name: data['name'] ?? '',
       job: data['job'] ?? '',
       mobileNumber: data['mobile_number'] ?? '',

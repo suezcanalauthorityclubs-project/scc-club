@@ -1,5 +1,6 @@
 // membership_cubit.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_core/firebase_core.dart';
 import '../services/firestore_service.dart';
 import 'membership_state.dart';
 
@@ -21,7 +22,11 @@ class MembershipCubit extends Cubit<MembershipState> {
       } else {
         emit(MembershipError("عفواً، لم يتم العثور على عضوية بهذا الرقم"));
       }
+    } on FirebaseException catch (e) {
+      print('FirebaseException: ${e.message}');
+      emit(MembershipError("خطأ في الاتصال: ${e.message}"));
     } catch (e) {
+      print('Unexpected error: $e');
       emit(MembershipError("فشل الاتصال بالقاعدة: يرجى التحقق من الإنترنت"));
     }
   }
