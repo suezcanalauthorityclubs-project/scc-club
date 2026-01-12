@@ -20,7 +20,7 @@ class SuezCanalClubApp extends StatelessWidget {
     return RepositoryProvider(
       create: (context) => DatabaseService(),
       child: BlocProvider(
-        create: (context) => MemberBloc(context.read<DatabaseService>()),
+        create: (context) => MemberBgit add .loc(context.read<DatabaseService>()),
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
           theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.blue),

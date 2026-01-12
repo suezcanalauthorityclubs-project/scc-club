@@ -1,56 +1,32 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/member_model.dart';
-import '../models/family_model.dart';
 
 class DatabaseService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // retrieve full member details including family members
-  Future<MemberModel?> getFullMemberDetails(String memberId) async {
-    try {
-      var memberDoc = await _db.collection('main_membership').doc(memberId).get();
-      if (!memberDoc.exists) return null;
-
-      var childrenSnap = await memberDoc.reference.collection('children').get();
-      var children = childrenSnap.docs
-          .map((doc) => FamilyMemberModel.fromMap(doc.data(), doc.id))
-          .toList();
-
-      var wivesSnap = await memberDoc.reference.collection('wives').get();
-      var wives = wivesSnap.docs
-          .map((doc) => FamilyMemberModel.fromMap(doc.data(), doc.id))
-          .toList();
-
-      return MemberModel.fromFirestore(
-        memberDoc.data()!, 
-        memberDoc.id, 
-        children: children, 
-        wives: wives
-      );
-    } catch (e) {
-      throw Exception("Error fetching: $e");
-    }
-  }
-
-  // upload member data (Create/Update)
+  // upload member data along with family members
   Future<void> uploadMember(MemberModel member) async {
     try {
+      // 1. identify the main member document reference
       DocumentReference memberRef = _db.collection('main_membership').doc(member.id);
-      
-      //upload main member data
+
+      // upload member data
       await memberRef.set(member.toMap());
 
-      // upload children
+      // upload children in Sub-collection
       for (var child in member.children) {
         await memberRef.collection('children').doc(child.id).set(child.toMap());
       }
 
-      // upload spouses
+      //upload spouses in Sub-collection
       for (var wife in member.wives) {
         await memberRef.collection('wives').doc(wife.id).set(wife.toMap());
       }
+
+      print("تم رفع بيانات العضو ${member.name} بنجاح!");
     } catch (e) {
-      throw Exception("Error uploading: $e");
+      print("خطأ أثناء الرفع: $e");
+      rethrow;
     }
   }
 }
