@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../models/family_model.dart'; 
+import '../models/membership_model.dart';
 
 class DependentScreen extends StatelessWidget {
-  final FamilyMemberModel dependent; 
+  final Dependent dependent;
 
   const DependentScreen({super.key, required this.dependent});
 
@@ -10,29 +10,31 @@ class DependentScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(dependent.name)),
-      body: SingleChildScrollView(
+      body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
-              Center(
-                child: Hero(
-                  tag: dependent.id,
-                  child: CircleAvatar(
-                    radius: 75,
-                    backgroundImage: NetworkImage(dependent.photoUrl),
-                  ),
-                ),
+              // Photo with Hero animation
+              Hero(
+                tag: dependent.id,
+                child: CircleAvatar(radius: 70, backgroundImage: NetworkImage(dependent.photoUrl)),
               ),
-              const SizedBox(height: 24),
-              Text(dependent.name, 
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Chip(label: Text(dependent.cardStatus)),
-              const SizedBox(height: 40),
-              // QR Code Placeholder
-              const Icon(Icons.qr_code_2, size: 200),
-              const Text("Scan for Access"),
+              const SizedBox(height: 20),
+              Text(dependent.name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              Text(dependent.gender, style: const TextStyle(color: Colors.grey)),
+              const SizedBox(height: 10),
+              Chip(label: Text(dependent.cardStatus), backgroundColor: Color.fromARGB(255, 200, 230, 201)),
+              const Spacer(),
+              // Simulated QR Code section
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+                child: const Icon(Icons.qr_code_2, size: 200, color: Colors.black87),
+              ),
+              const SizedBox(height: 10),
+              const Text('امسح الكود للدخول', style: TextStyle(color: Colors.grey)),
+              const Spacer(),
             ],
           ),
         ),

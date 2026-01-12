@@ -1,31 +1,100 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'services/database_service.dart';
-import 'logic/member_bloc.dart';
-import 'logic/member_event.dart';
-import 'logic/member_state.dart';
+import 'firebase_options.dart';
+import 'theme/app_theme.dart';
+import 'services/firestore_service.dart';
+import 'cubits/membership_cubit.dart';
+import 'screens/lookup_screen.dart';
+
+// --- THE SAMPLE DATA ---
+// Defined as a global constant Map to avoid syntax errors in main()
+final Map<String, dynamic> mySampleData = {
+  "main_membership": {
+    "1036711": {
+      "membership_id": "1036711",
+      "membership_type": 1,
+      "name": "أحمد بدر خميس أحمد",
+      "job": "مهندس أول",
+      "mobile_number": "01280017104",
+      "marital_status": "متزوج",
+      "national_id": "29001260100691",
+      "membership_status": "سارية",
+      "card_expiry_date": "2026-12-31",
+      "dependents": 3,
+      "photoUrl": "https://via.placeholder.com/300x300.png?text=Photo",
+      "memberships": {
+        "beach": true,
+        "golf": true,
+        "yacht": true,
+        "tennis": true,
+        "knighthood": true,
+        "rowing": true
+      },
+      "wives": {
+        "1": {
+          "wife_id": "1",
+          "name": "منة الله أشرف",
+          "gender": "أنثى",
+          "card_status": "يصدر",
+          "photoUrl": "https://via.placeholder.com/300x300.png?text=Photo"
+        }
+      },
+      "children": {
+        "1": {
+          "child_id": "1",
+          "name": "بدر الدين أحمد بدر خميس",
+          "gender": "ذكر",
+          "card_status": "يصدر",
+          "photoUrl": "https://via.placeholder.com/300x300.png?text=Photo"
+        },
+        "2": {
+          "child_id": "2",
+          "name": "عبدالرحمن أحمد بدر خميس",
+          "gender": "ذكر",
+          "card_status": "يصدر",
+          "photoUrl": "https://via.placeholder.com/300x300.png?text=Photo"
+        }
+      }
+    }
+  }
+};
 
 void main() async {
+  // Ensure Flutter engine is ready
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  runApp(const SuezCanalClubApp());
+  
+  // Initialize Firebase with the generated options
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  debugPrint("--- [DEBUG]: Firebase Connected Successfully ---");
+
+  // TRIGGER DATA UPLOAD (Uncomment the line below to seed Firestore)
+  try {
+    final firestoreService = FirestoreService();
+   // await firestoreService.uploadSampleData(mySampleData);
+    debugPrint("--- [SUCCESS]: Sample data uploaded to Firestore! ---");
+  } catch (e) {
+    debugPrint("--- [ERROR]: Failed to upload data: $e ---");
+  }
+
+  runApp(const MyApp());
 }
 
-class SuezCanalClubApp extends StatelessWidget {
-  const SuezCanalClubApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return RepositoryProvider(
-      create: (context) => DatabaseService(),
-      child: BlocProvider(
-        create: (context) => MemberBgit add .loc(context.read<DatabaseService>()),
-        child: MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.blue),
-          home: const Scaffold(body: Center(child: Text("تم إعداد الهيكل بنجاح"))),
-        ),
+    return MultiBlocProvider(
+      providers: [
+        // Provide the Cubit globally so it's accessible from LookupScreen
+        BlocProvider(create: (context) => MembershipCubit(FirestoreService())),
+      ],
+      child: MaterialApp(
+        title: 'النادي العام - نظام العضوية',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        home: const LookupScreen(),
       ),
     );
   }
