@@ -7,6 +7,7 @@ import 'package:sca_members_clubs/features/booking/presentation/cubit/booking_fo
 import 'package:sca_members_clubs/features/booking/presentation/cubit/booking_form_state.dart';
 import 'package:sca_members_clubs/core/di/injection_container.dart';
 import 'package:sca_members_clubs/features/home/presentation/cubit/navigation_cubit.dart';
+import 'package:sca_members_clubs/core/services/firebase_service.dart';
 
 class BookingFormScreen extends StatelessWidget {
   final Map<String, dynamic> service;
@@ -39,6 +40,24 @@ class _BookingFormViewState extends State<BookingFormView> {
   bool _isSelfBooking = true;
   final TextEditingController _guestNameController = TextEditingController();
   final TextEditingController _guestPhoneController = TextEditingController();
+
+  // Club Selection
+  List<Map<String, dynamic>> _clubs = [];
+  String? _selectedClubId;
+  String? _selectedClubName;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadClubs();
+  }
+
+  Future<void> _loadClubs() async {
+    final clubs = await FirebaseService().getClubs();
+    setState(() {
+      _clubs = clubs;
+    });
+  }
 
   final List<String> _timeSlots = [
     "10:00 ص",
@@ -303,6 +322,12 @@ class _BookingFormViewState extends State<BookingFormView> {
 
                 // PHOTO SESSION SPECIFIC LOGIC
                 if (isPhotoSession) ...[
+                  // Club Selection
+                  _buildModernLabel("النادي"),
+                  const SizedBox(height: 12),
+                  _buildClubDropdown(),
+                  const SizedBox(height: 24),
+
                   // Booking For Selection (Self vs Other)
                   // Booking For Selection (Self vs Other)
                   _buildModernLabel("لمن هذا الحجز؟"),
@@ -644,6 +669,16 @@ class _BookingFormViewState extends State<BookingFormView> {
       }
     }
 
+    if (isPhotoSession && _selectedClubId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("يرجى اختيار النادي", style: GoogleFonts.cairo()),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     final finalService = Map<String, dynamic>.from(widget.service);
 
     // Add Photo Session Extras
@@ -655,6 +690,8 @@ class _BookingFormViewState extends State<BookingFormView> {
         finalService['guest_name'] = _guestNameController.text;
         finalService['guest_phone'] = _guestPhoneController.text;
       }
+      finalService['club_id'] = _selectedClubId;
+      finalService['club_name'] = _selectedClubName;
     }
 
     context.read<BookingFormCubit>().submitBooking(
@@ -677,43 +714,49 @@ class _BookingFormViewState extends State<BookingFormView> {
     );
   }
 
-  Widget _buildReadOnlyField(IconData icon, String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
+  Widget _buildClubDropdown() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _selectedClubId,
+          hint: Text(
+            "اختر النادي",
+            style: GoogleFonts.cairo(color: Colors.grey[400], fontSize: 14),
+          ),
+          isExpanded: true,
+          icon: const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: AppColors.primary,
+          ),
           style: GoogleFonts.cairo(
-            fontSize: 12,
-            color: Colors.grey[600],
+            color: AppColors.textPrimary,
             fontWeight: FontWeight.w600,
+            fontSize: 14,
           ),
+          onChanged: (String? newValue) {
+            setState(() {
+              _selectedClubId = newValue;
+              _selectedClubName = _clubs.firstWhere(
+                (c) => c['id'] == newValue,
+              )['name'];
+            });
+          },
+          items: _clubs.map<DropdownMenuItem<String>>((
+            Map<String, dynamic> club,
+          ) {
+            return DropdownMenuItem<String>(
+              value: club['id'],
+              child: Text(club['name']),
+            );
+          }).toList(),
         ),
-        const SizedBox(height: 6),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey[200]!),
-          ),
-          child: Row(
-            children: [
-              Icon(icon, color: AppColors.primary, size: 20),
-              const SizedBox(width: 12),
-              Text(
-                value,
-                style: GoogleFonts.cairo(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

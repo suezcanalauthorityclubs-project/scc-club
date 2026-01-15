@@ -51,7 +51,12 @@ class MenuView extends StatelessWidget {
                 background: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Container(color: Colors.grey[400]), // Image Placeholder
+                    Image.network(
+                      restaurant.image,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          Container(color: Colors.grey[400]),
+                    ),
                     Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
@@ -172,14 +177,22 @@ class MenuView extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              item.image,
+              width: 80,
+              height: 80,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: 80,
+                  height: 80,
+                  color: Colors.grey[200],
+                  child: const Icon(Icons.fastfood, color: Colors.grey),
+                );
+              },
             ),
-            child: const Icon(Icons.fastfood, color: Colors.grey),
           ),
           const SizedBox(width: 16),
           Expanded(

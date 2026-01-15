@@ -94,25 +94,11 @@ class BookingView extends StatelessWidget {
     return InkWell(
       onTap: () {
         if (service.type == 'activities_schedule') {
-          Navigator.pushNamed(
-            context,
-            Routes.clubSelection,
-            arguments: {
-              'targetRoute': Routes.activities,
-              'title': 'مواعيد الأنشطة',
-            },
-          );
+          Navigator.pushNamed(context, Routes.activities);
           return;
         }
         if (service.type == 'dining') {
-          Navigator.pushNamed(
-            context,
-            Routes.clubSelection,
-            arguments: {
-              'targetRoute': Routes.dining,
-              'title': 'المطاعم والكافيهات',
-            },
-          );
+          Navigator.pushNamed(context, Routes.dining);
           return;
         }
 

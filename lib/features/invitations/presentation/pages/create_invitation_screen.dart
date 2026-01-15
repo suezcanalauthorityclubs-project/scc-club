@@ -15,19 +15,46 @@ class CreateInvitationScreen extends StatefulWidget {
 class _CreateInvitationScreenState extends State<CreateInvitationScreen> {
   final _formKey = GlobalKey<FormState>();
 
+  // Invitation Options
+  List<Map<String, dynamic>> _clubs = [];
+  String? _selectedClubId;
+  String? _selectedClubName;
+  String _invitationType = "بدون عضو"; // "في وجود العضو" or "بدون عضو"
+
   // Current guest being entered
   DateTime? _currentDate;
   final _nameController = TextEditingController();
   final _idController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _guestCountController = TextEditingController(text: "1");
   bool _saveToFavorites = false;
 
   // List of guests added to the table
   final List<GuestData> _addedGuests = [];
 
   @override
+  void initState() {
+    super.initState();
+    _loadClubs();
+  }
+
+  Future<void> _loadClubs() async {
+    final clubs = await FirebaseService().getClubs();
+    setState(() {
+      _clubs = clubs;
+      if (_clubs.isNotEmpty) {
+        _selectedClubId = _clubs.first['id'];
+        _selectedClubName = _clubs.first['name'];
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _idController.dispose();
+    _phoneController.dispose();
+    _guestCountController.dispose();
     super.dispose();
   }
 
@@ -70,73 +97,104 @@ class _CreateInvitationScreenState extends State<CreateInvitationScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            _buildSectionTitle("بيانات الدعوة"),
+            const SizedBox(height: 16),
+
+            _buildLabel("النادي المدعو له"),
+            _buildClubDropdown(),
+
+            const SizedBox(height: 20),
+
+            _buildLabel("نوع الدعوة"),
+            _buildTypeSelection(),
+
+            const SizedBox(height: 32),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildSectionTitle("بيانات الزائر"),
-                TextButton.icon(
-                  onPressed: _showFrequentGuestsSheet,
-                  icon: const Icon(
-                    Icons.star_rounded,
-                    size: 18,
-                    color: AppColors.primary,
-                  ),
-                  label: Text(
-                    "المفضلة",
-                    style: GoogleFonts.cairo(
+                if (_invitationType == "بدون عضو")
+                  TextButton.icon(
+                    onPressed: _showFrequentGuestsSheet,
+                    icon: const Icon(
+                      Icons.star_rounded,
+                      size: 18,
                       color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
+                    ),
+                    label: Text(
+                      "المفضلة",
+                      style: GoogleFonts.cairo(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
             const SizedBox(height: 16),
 
-            _buildLabel("اسم الزائر (رباعي)"),
-            _buildTextField(
-              hint: "أدخل الاسم كما في البطاقة",
-              controller: _nameController,
-              icon: Icons.person_outline,
-            ),
-
-            const SizedBox(height: 20),
-
-            _buildLabel("الرقم القومي للزائر"),
-            _buildTextField(
-              hint: "14 رقم قومي",
-              keyboardType: TextInputType.number,
-              controller: _idController,
-              icon: Icons.badge_outlined,
-            ),
+            if (_invitationType == "بدون عضو") ...[
+              _buildLabel("اسم الزائر (رباعي)"),
+              _buildTextField(
+                hint: "أدخل الاسم كما في البطاقة",
+                controller: _nameController,
+                icon: Icons.person_outline,
+              ),
+              const SizedBox(height: 20),
+              _buildLabel("الرقم القومي للزائر"),
+              _buildTextField(
+                hint: "14 رقم قومي",
+                keyboardType: TextInputType.number,
+                controller: _idController,
+                icon: Icons.badge_outlined,
+              ),
+              const SizedBox(height: 20),
+              _buildLabel("رقم تليفون الزائر"),
+              _buildTextField(
+                hint: "01xxxxxxxxx",
+                keyboardType: TextInputType.phone,
+                controller: _phoneController,
+                icon: Icons.phone_outlined,
+              ),
+            ] else ...[
+              _buildLabel("عدد الأفراد"),
+              _buildTextField(
+                hint: "أدخل عدد الأفراد",
+                keyboardType: TextInputType.number,
+                controller: _guestCountController,
+                icon: Icons.people_outline,
+              ),
+            ],
 
             const SizedBox(height: 12),
 
-            Row(
-              children: [
-                SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: Checkbox(
-                    value: _saveToFavorites,
-                    onChanged: (val) =>
-                        setState(() => _saveToFavorites = val ?? false),
-                    activeColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
+            if (_invitationType == "بدون عضو")
+              Row(
+                children: [
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: Checkbox(
+                      value: _saveToFavorites,
+                      onChanged: (val) =>
+                          setState(() => _saveToFavorites = val ?? false),
+                      activeColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  "حفظ في قائمة الضيوف الدائمين",
-                  style: GoogleFonts.cairo(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
+                  const SizedBox(width: 8),
+                  Text(
+                    "حفظ في قائمة الضيوف الدائمين",
+                    style: GoogleFonts.cairo(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
 
             const SizedBox(height: 24),
 
@@ -226,7 +284,7 @@ class _CreateInvitationScreenState extends State<CreateInvitationScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        "سيتم خصم (${_addedGuests.length}) دعوات من رصيدك عند التأكيد.",
+                        "سيتم خصم (${_addedGuests.fold<int>(0, (sum, g) => sum + g.guestCount)}) دعوات من رصيدك عند التأكيد.",
                         style: GoogleFonts.cairo(
                           color: AppColors.textPrimary,
                           fontSize: 13,
@@ -258,6 +316,121 @@ class _CreateInvitationScreenState extends State<CreateInvitationScreen> {
         fontSize: 20,
         fontWeight: FontWeight.bold,
         color: AppColors.textPrimary,
+      ),
+    );
+  }
+
+  Widget _buildClubDropdown() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _selectedClubId,
+          isExpanded: true,
+          icon: const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: AppColors.primary,
+          ),
+          style: GoogleFonts.cairo(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+          onChanged: (String? newValue) {
+            setState(() {
+              _selectedClubId = newValue;
+              _selectedClubName = _clubs.firstWhere(
+                (c) => c['id'] == newValue,
+              )['name'];
+            });
+          },
+          items: _clubs.map<DropdownMenuItem<String>>((
+            Map<String, dynamic> club,
+          ) {
+            return DropdownMenuItem<String>(
+              value: club['id'],
+              child: Text(club['name']),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTypeSelection() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildTypeCard(
+            "بدون عضو",
+            Icons.person_pin_circle_outlined,
+            _invitationType == "بدون عضو",
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildTypeCard(
+            "في وجود العضو",
+            Icons.people_alt_outlined,
+            _invitationType == "في وجود العضو",
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTypeCard(String title, IconData icon, bool isSelected) {
+    return InkWell(
+      onTap: () => setState(() => _invitationType = title),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primary
+                : Colors.grey.withOpacity(0.1),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Colors.white : AppColors.primary,
+              size: 24,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: GoogleFonts.cairo(
+                color: isSelected ? Colors.white : AppColors.textPrimary,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -321,22 +494,28 @@ class _CreateInvitationScreenState extends State<CreateInvitationScreen> {
   }
 
   void _addGuestToList() {
-    if (_nameController.text.isEmpty ||
-        _idController.text.length < 14 ||
-        _currentDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "برجاء إكمال بيانات الزائر واختيار التاريخ",
-            style: GoogleFonts.cairo(),
-          ),
-          backgroundColor: AppColors.error,
-        ),
-      );
+    if (_currentDate == null || _selectedClubId == null) {
+      _showError("برجاء اختيار التاريخ والنادي");
       return;
     }
 
-    if (_saveToFavorites) {
+    if (_invitationType == "بدون عضو") {
+      if (_nameController.text.isEmpty ||
+          _idController.text.length < 14 ||
+          _phoneController.text.isEmpty) {
+        _showError("برجاء إكمال بيانات الزائر (الاسم، الرقم القومي، الهاتف)");
+        return;
+      }
+    } else {
+      if (_guestCountController.text.isEmpty ||
+          int.tryParse(_guestCountController.text) == null ||
+          int.parse(_guestCountController.text) <= 0) {
+        _showError("برجاء إدخال عدد أفراد صحيح");
+        return;
+      }
+    }
+
+    if (_invitationType == "بدون عضو" && _saveToFavorites) {
       FirebaseService().toggleFrequentGuest({
         "name": _nameController.text,
         "national_id": _idController.text,
@@ -346,8 +525,15 @@ class _CreateInvitationScreenState extends State<CreateInvitationScreen> {
     setState(() {
       _addedGuests.add(
         GuestData(
-          name: _nameController.text,
-          id: _idController.text,
+          name: _invitationType == "بدون عضو" ? _nameController.text : null,
+          id: _invitationType == "بدون عضو" ? _idController.text : null,
+          phone: _invitationType == "بدون عضو" ? _phoneController.text : null,
+          guestCount: _invitationType == "في وجود العضو"
+              ? int.parse(_guestCountController.text)
+              : 1,
+          clubId: _selectedClubId!,
+          clubName: _selectedClubName!,
+          type: _invitationType,
           date: _currentDate!,
         ),
       );
@@ -355,8 +541,19 @@ class _CreateInvitationScreenState extends State<CreateInvitationScreen> {
       // Clear fields for next entry
       _nameController.clear();
       _idController.clear();
+      _phoneController.clear();
+      _guestCountController.text = "1";
       _saveToFavorites = false;
     });
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: GoogleFonts.cairo()),
+        backgroundColor: AppColors.error,
+      ),
+    );
   }
 
   Future<void> _issueAllInvitations() async {
@@ -372,11 +569,15 @@ class _CreateInvitationScreenState extends State<CreateInvitationScreen> {
       );
 
       await FirebaseService().createInvitation({
-        "guest_name": guest.name,
-        "national_id": guest.id,
+        "guest_name": guest.name ?? "في وجود العضو",
+        "national_id": guest.id ?? "N/A",
         "date": "${guest.date.day}/${guest.date.month}/${guest.date.year}",
-        "guest_count": 1,
+        "guest_count": guest.guestCount,
         "expiry": expiryDate.toIso8601String(),
+        "club_id": guest.clubId,
+        "club_name": guest.clubName,
+        "type": guest.type,
+        "phone": guest.phone,
       });
     }
 
@@ -505,14 +706,16 @@ class _CreateInvitationScreenState extends State<CreateInvitationScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      guest.name,
+                      guest.type == "في وجود العضو"
+                          ? "دعوة في وجود العضو (${guest.guestCount} أفراد)"
+                          : guest.name ?? "زائر غير معروف",
                       style: GoogleFonts.cairo(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
                       ),
                     ),
                     Text(
-                      "تاريخ: ${guest.date.day}/${guest.date.month}/${guest.date.year}",
+                      "${guest.clubName} • ${guest.date.day}/${guest.date.month}/${guest.date.year}",
                       style: GoogleFonts.cairo(
                         color: Colors.grey,
                         fontSize: 12,
@@ -551,9 +754,23 @@ class _CreateInvitationScreenState extends State<CreateInvitationScreen> {
 }
 
 class GuestData {
-  final String name;
-  final String id;
+  final String? name;
+  final String? id;
+  final String? phone;
+  final int guestCount;
+  final String clubId;
+  final String clubName;
+  final String type;
   final DateTime date;
 
-  GuestData({required this.name, required this.id, required this.date});
+  GuestData({
+    this.name,
+    this.id,
+    this.phone,
+    required this.guestCount,
+    required this.clubId,
+    required this.clubName,
+    required this.type,
+    required this.date,
+  });
 }

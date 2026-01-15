@@ -283,6 +283,17 @@ class MockData {
       "date": "20/01/2026",
       "status": "pending",
     },
+    {
+      "id": "inv5",
+      "guest_name": "في وجود العضو",
+      "national_id": "N/A",
+      "date": "20/01/2026",
+      "status": "active",
+      "guest_count": 3,
+      "type": "في وجود العضو",
+      "club_id": "c1",
+      "club_name": "نادي التجديف (الإسماعيلية)",
+    },
   ];
 
   // Invitation Requests (Admin Only)
@@ -314,7 +325,8 @@ class MockData {
     {
       "id": "r1",
       "name": "المطعم الرئيسي",
-      "image": "assets/images/restaurant_main.jpg",
+      "image":
+          "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000",
       "description": "أشهى المأكولات الشرقية والغربية",
       "rating": 4.5,
       "delivery_time": "30-45 دقيقة",
@@ -323,11 +335,42 @@ class MockData {
     {
       "id": "r2",
       "name": "كافيه الشاطئ",
-      "image": "assets/images/cafe_beach.jpg",
+      "image":
+          "https://images.unsplash.com/photo-1453614512568-c4024d13c247?q=80&w=1000",
       "description": "مشروبات باردة وساخنة وسناكس",
       "rating": 4.2,
       "delivery_time": "15-20 دقيقة",
       "club_id": "c2",
+    },
+    {
+      "id": "r3",
+      "name": "مطعم الجندول",
+      "image":
+          "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1000",
+      "description": "مأكولات إيطالية وعالمية",
+      "rating": 4.7,
+      "delivery_time": "35-50 دقيقة",
+      "club_id": "c1",
+    },
+    {
+      "id": "r4",
+      "name": "كافية التراس",
+      "image":
+          "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1000",
+      "description": "إطلالة مميزة على القناة",
+      "rating": 4.4,
+      "delivery_time": "10-15 دقيقة",
+      "club_id": "c1",
+    },
+    {
+      "id": "r5",
+      "name": "مطعم الأسماك",
+      "image":
+          "https://images.unsplash.com/photo-1534081333815-ae5019106622?q=80&w=1000",
+      "description": "أجود أنواع الأسماك البحرية",
+      "rating": 4.8,
+      "delivery_time": "40-60 دقيقة",
+      "club_id": "c3",
     },
   ];
 
@@ -338,7 +381,8 @@ class MockData {
       "name": "بيتزا مارجريتا",
       "description": "صوص طماطم، موزاريلا، ريحان",
       "price": 85.0,
-      "image": "assets/images/pizza.jpg",
+      "image":
+          "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?q=80&w=800",
       "category": "بيتزا",
     },
     {
@@ -347,7 +391,8 @@ class MockData {
       "name": "برجر دجاج",
       "description": "صدور دجاج مشوية، خس، طماطم، صوص خاص",
       "price": 110.0,
-      "image": "assets/images/burger.jpg",
+      "image":
+          "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=800",
       "category": "سندوتشات",
     },
     {
@@ -356,7 +401,8 @@ class MockData {
       "name": "كفتة مشوية",
       "description": "كفتة بلدي مشوية على الفحم مع أرز وبطاطس",
       "price": 145.0,
-      "image": "assets/images/kofta.jpg",
+      "image":
+          "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?q=80&w=800",
       "category": "مشويات",
     },
     {
@@ -365,7 +411,8 @@ class MockData {
       "name": "عصير برتقال فريش",
       "description": "عصير طبيعي 100%",
       "price": 40.0,
-      "image": "assets/images/juice.jpg",
+      "image":
+          "https://images.unsplash.com/photo-1613478223719-2ab802602423?q=80&w=800",
       "category": "مشروبات",
     },
     {
@@ -374,7 +421,8 @@ class MockData {
       "name": "كابتشينو",
       "description": "قهوة إيطالية مع رغوة حليب كثيفة",
       "price": 55.0,
-      "image": "assets/images/cap.jpg",
+      "image":
+          "https://images.unsplash.com/photo-1572442388796-11668a67e53d?q=80&w=800",
       "category": "مشروبات",
     },
   ];
@@ -886,7 +934,6 @@ class MockData {
     },
   ];
 
-  // Invitation Cards (New)
   static final List<Map<String, dynamic>> invitationCards = [
     {
       "id": "card_001",
@@ -903,14 +950,6 @@ class MockData {
       "used": 8,
       "expiry": "2026-03-15",
       "color": "0xFF2E7D32",
-    },
-    {
-      "id": "card_003",
-      "type": "عروض الصيف",
-      "total": 5,
-      "used": 0,
-      "expiry": "2026-08-30",
-      "color": "0xFFC9A24D",
     },
   ];
 }

@@ -138,7 +138,10 @@ class AppRouter {
       case Routes.dining:
         return MaterialPageRoute(builder: (_) => const DiningScreen());
       case Routes.menu:
-        return MaterialPageRoute(builder: (_) => const MenuScreen());
+        return MaterialPageRoute(
+          builder: (_) => const MenuScreen(),
+          settings: settings,
+        );
       case Routes.familyMembers:
         return MaterialPageRoute(builder: (_) => const FamilyListScreen());
       case Routes.addFamilyMember:

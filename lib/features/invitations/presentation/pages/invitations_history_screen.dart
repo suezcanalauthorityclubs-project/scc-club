@@ -182,7 +182,7 @@ class _InvitationsHistoryScreenState extends State<InvitationsHistoryScreen> {
           ),
         ),
         title: Text(
-          inv['guest_name'] ?? "",
+          inv['type'] == "في وجود العضو" ? "زائر" : (inv['guest_name'] ?? ""),
           style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 14),
         ),
         subtitle: Text(
@@ -332,14 +332,16 @@ class _InvitationsHistoryScreenState extends State<InvitationsHistoryScreen> {
                       _buildModernDetailRow(
                         Icons.person_outline,
                         "اسم الزائر",
-                        name,
+                        inv['type'] == "في وجود العضو" ? "زائر" : name,
                       ),
-                      const Divider(height: 24),
-                      _buildModernDetailRow(
-                        Icons.people_outline,
-                        "عدد الأفراد",
-                        "$guestCount أفراد",
-                      ),
+                      if (inv['type'] == "في وجود العضو") ...[
+                        const Divider(height: 24),
+                        _buildModernDetailRow(
+                          Icons.people_outline,
+                          "عدد الأفراد",
+                          "$guestCount أفراد",
+                        ),
+                      ],
                       const Divider(height: 24),
                       _buildModernDetailRow(
                         Icons.calendar_today_outlined,

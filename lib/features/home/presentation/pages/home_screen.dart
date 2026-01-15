@@ -5,12 +5,10 @@ import '../widgets/home_app_bar.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/promo_banner.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../cubit/navigation_cubit.dart';
 import '../cubit/home_cubit.dart';
 import '../cubit/home_state.dart';
 import 'package:sca_members_clubs/core/di/injection_container.dart';
 import '../widgets/greeting_widget.dart';
-import '../widgets/membership_shortcut.dart';
 import 'package:sca_members_clubs/core/services/firebase_service.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -80,13 +78,7 @@ class _HomeViewState extends State<HomeView> {
                       ),
                     )
                   else if (state is HomeLoaded)
-                    Column(
-                      children: [
-                        PromoBanner(promos: state.promos),
-                        const SizedBox(height: 24),
-                        MembershipShortcut(clubName: widget.clubName),
-                      ],
-                    )
+                    Column(children: [PromoBanner(promos: state.promos)])
                   else
                     const SizedBox.shrink(),
 
@@ -110,13 +102,25 @@ class _HomeViewState extends State<HomeView> {
                               mainAxisSpacing: 16,
                               childAspectRatio: 0.82,
                             ),
-                        itemCount: 5,
+                        itemCount: 3,
                         itemBuilder: (context, index) {
                           final services = [
                             _ServiceData(
+                              Icons.badge_rounded,
+                              "كارنيه العضوية",
+                              AppColors.primary,
+                              () {
+                                Navigator.pushNamed(
+                                  context,
+                                  '/membership_card',
+                                  arguments: widget.clubName,
+                                );
+                              },
+                            ),
+                            _ServiceData(
                               Icons.mail_outline_rounded,
                               "دعوات الزوار",
-                              AppColors.primary,
+                              const Color(0xFF0EA5E9),
                               () {
                                 Navigator.pushNamed(context, '/invitations');
                               },
@@ -124,33 +128,9 @@ class _HomeViewState extends State<HomeView> {
                             _ServiceData(
                               Icons.calendar_today_rounded,
                               "حجز خدمات",
-                              const Color(0xFF0EA5E9),
-                              () {
-                                Navigator.pushNamed(context, '/booking');
-                              },
-                            ),
-                            _ServiceData(
-                              Icons.history_rounded,
-                              "سجل الحجوزات",
                               const Color(0xFF8B5CF6),
                               () {
-                                context.read<NavigationCubit>().setTab(1);
-                              },
-                            ),
-                            _ServiceData(
-                              Icons.payment_rounded,
-                              "المدفوعات",
-                              const Color(0xFF10B981),
-                              () {
-                                Navigator.pushNamed(context, '/payments');
-                              },
-                            ),
-                            _ServiceData(
-                              Icons.newspaper_rounded,
-                              "الأخبار",
-                              const Color(0xFFF59E0B),
-                              () {
-                                Navigator.pushNamed(context, '/news');
+                                Navigator.pushNamed(context, '/booking');
                               },
                             ),
                           ];
@@ -362,6 +342,7 @@ class _HomeViewState extends State<HomeView> {
                     ),
                   ],
 
+                  // Recent News Section
                   const SizedBox(height: 120),
                 ],
               ),

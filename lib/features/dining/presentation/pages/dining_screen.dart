@@ -6,6 +6,7 @@ import 'package:sca_members_clubs/features/dining/presentation/cubit/dining_cubi
 import 'package:sca_members_clubs/features/dining/presentation/cubit/dining_state.dart';
 import 'package:sca_members_clubs/features/dining/domain/entities/restaurant.dart';
 import 'package:sca_members_clubs/core/di/injection_container.dart';
+import 'package:sca_members_clubs/core/services/firebase_service.dart';
 
 class DiningScreen extends StatelessWidget {
   const DiningScreen({super.key});
@@ -22,8 +23,30 @@ class DiningScreen extends StatelessWidget {
   }
 }
 
-class DiningView extends StatelessWidget {
+class DiningView extends StatefulWidget {
   const DiningView({super.key});
+
+  @override
+  State<DiningView> createState() => _DiningViewState();
+}
+
+class _DiningViewState extends State<DiningView> {
+  List<Map<String, dynamic>> _clubs = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadClubs();
+  }
+
+  Future<void> _loadClubs() async {
+    final clubs = await FirebaseService().getClubs();
+    if (mounted) {
+      setState(() {
+        _clubs = clubs;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,6 +98,17 @@ class DiningView extends StatelessWidget {
   }
 
   Widget _buildRestaurantCard(BuildContext context, Restaurant restaurant) {
+    String? clubName;
+    if (_clubs.isNotEmpty) {
+      final club = _clubs.firstWhere(
+        (c) => c['id'] == restaurant.clubId,
+        orElse: () => {'name': ''},
+      );
+      if (club['name'] != '') {
+        clubName = club['name'];
+      }
+    }
+
     return GestureDetector(
       onTap: () {
         Navigator.pushNamed(context, '/menu', arguments: restaurant);
@@ -99,7 +133,17 @@ class DiningView extends StatelessWidget {
               height: 150,
               width: double.infinity,
               color: Colors.grey[300],
-              child: const Icon(Icons.restaurant, size: 50, color: Colors.grey),
+              child: Image.network(
+                restaurant.image,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(
+                    Icons.restaurant,
+                    size: 50,
+                    color: Colors.grey,
+                  );
+                },
+              ),
             ),
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -109,12 +153,16 @@ class DiningView extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        restaurant.name,
-                        style: GoogleFonts.cairo(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
+                      Flexible(
+                        child: Text(
+                          restaurant.name,
+                          style: GoogleFonts.cairo(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       Container(
@@ -147,6 +195,27 @@ class DiningView extends StatelessWidget {
                       ),
                     ],
                   ),
+                  if (clubName != null) ...[
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        clubName,
+                        style: GoogleFonts.cairo(
+                          fontSize: 12,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Text(
                     restaurant.description,

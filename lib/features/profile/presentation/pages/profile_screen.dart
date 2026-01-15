@@ -134,14 +134,7 @@ class ProfileView extends StatelessWidget {
                             () {
                               Navigator.pushNamed(context, '/family_members');
                             },
-                          ),
-                          _buildProfileItem(
-                            context,
-                            Icons.history,
-                            "سجل النشاطات",
-                            () {
-                              Navigator.pushNamed(context, '/activity_history');
-                            },
+                            showDivider: false,
                           ),
                         ]),
 
@@ -155,22 +148,7 @@ class ProfileView extends StatelessWidget {
                             () {
                               Navigator.pushNamed(context, '/settings');
                             },
-                          ),
-                          _buildProfileItem(
-                            context,
-                            Icons.lock,
-                            "تغيير كلمة المرور",
-                            () {
-                              Navigator.pushNamed(context, '/change_password');
-                            },
-                          ),
-                          _buildProfileItem(
-                            context,
-                            Icons.language,
-                            "اللغة",
-                            () {
-                              Navigator.pushNamed(context, '/settings');
-                            },
+                            showDivider: false,
                           ),
                         ]),
 

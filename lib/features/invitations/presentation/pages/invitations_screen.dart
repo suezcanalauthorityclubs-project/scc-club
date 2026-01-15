@@ -672,7 +672,7 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        guestName,
+                        inv['type'] == "في وجود العضو" ? "زائر" : guestName,
                         style: GoogleFonts.cairo(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -846,14 +846,16 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
                       _buildModernDetailRow(
                         Icons.person_outline,
                         "اسم الزائر",
-                        name,
+                        inv['type'] == "في وجود العضو" ? "زائر" : name,
                       ),
-                      const Divider(height: 24),
-                      _buildModernDetailRow(
-                        Icons.people_outline,
-                        "عدد الأفراد",
-                        "$guestCount أفراد",
-                      ),
+                      if (inv['type'] == "في وجود العضو") ...[
+                        const Divider(height: 24),
+                        _buildModernDetailRow(
+                          Icons.people_outline,
+                          "عدد الأفراد",
+                          "$guestCount أفراد",
+                        ),
+                      ],
                       const Divider(height: 24),
                       _buildModernDetailRow(
                         Icons.calendar_today_outlined,

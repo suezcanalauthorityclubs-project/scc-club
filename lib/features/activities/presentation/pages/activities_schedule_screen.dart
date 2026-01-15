@@ -16,6 +16,7 @@ class _ActivitiesScheduleScreenState extends State<ActivitiesScheduleScreen>
   late Future<List<Map<String, dynamic>>> _activitiesFuture;
   late TabController _tabController;
   String? _clubId;
+  List<Map<String, dynamic>> _clubs = [];
 
   @override
   void initState() {
@@ -28,6 +29,16 @@ class _ActivitiesScheduleScreenState extends State<ActivitiesScheduleScreen>
     super.didChangeDependencies();
     _clubId = ModalRoute.of(context)?.settings.arguments as String?;
     _activitiesFuture = FirebaseService().getActivities(clubId: _clubId);
+    _loadClubs();
+  }
+
+  Future<void> _loadClubs() async {
+    final clubs = await FirebaseService().getClubs();
+    if (mounted) {
+      setState(() {
+        _clubs = clubs;
+      });
+    }
   }
 
   @override
@@ -117,6 +128,30 @@ class _ActivitiesScheduleScreenState extends State<ActivitiesScheduleScreen>
                       ),
                     ],
                   ),
+                  const SizedBox(height: 8),
+                  if (_clubs.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _clubs.firstWhere(
+                              (c) => c['id'] == activity['club_id'],
+                              orElse: () => {'name': 'غير محدد'},
+                            )['name'] ??
+                            'غير محدد',
+                        style: GoogleFonts.cairo(
+                          fontSize: 12,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   const SizedBox(height: 12),
                   _buildInfoRow(
                     Icons.calendar_today,
