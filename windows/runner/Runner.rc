@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "scc_app" "\0"
+            VALUE "CompanyName", "com.sca_clubs" "\0"
+            VALUE "FileDescription", "sca_members_clubs" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "scc_app" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "scc_app.exe" "\0"
-            VALUE "ProductName", "scc_app" "\0"
+            VALUE "InternalName", "sca_members_clubs" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 com.sca_clubs. All rights reserved." "\0"
+            VALUE "OriginalFilename", "sca_members_clubs.exe" "\0"
+            VALUE "ProductName", "sca_members_clubs" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
