@@ -12,6 +12,54 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
 
+  void _showLanguageDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'اختر اللغة',
+          style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text('العربية', style: GoogleFonts.cairo()),
+              leading: const Icon(Icons.check, color: AppColors.primary),
+              onTap: () {
+                // Language change logic will be implemented with SettingsCubit
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'اللغة العربية مفعلة حالياً',
+                      style: GoogleFonts.cairo(),
+                    ),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              title: Text('English', style: GoogleFonts.cairo()),
+              leading: const Icon(Icons.circle_outlined),
+              onTap: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'English language support coming soon',
+                      style: GoogleFonts.cairo(),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,6 +108,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 12),
             _buildSettingsCard([
+              _buildNavigationItem(
+                Icons.lock_reset,
+                "تغيير كلمة المرور",
+                null,
+                () {
+                  Navigator.pushNamed(context, '/change_password');
+                },
+              ),
+              _buildNavigationItem(Icons.language, "تغيير اللغة", null, () {
+                _showLanguageDialog();
+              }),
               _buildNavigationItem(
                 Icons.privacy_tip_outlined,
                 "سياسة الخصوصية",

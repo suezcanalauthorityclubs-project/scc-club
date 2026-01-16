@@ -25,7 +25,7 @@ import 'package:sca_members_clubs/features/profile/domain/entities/family_member
 import 'package:sca_members_clubs/features/home/presentation/pages/club_selection_screen.dart';
 import 'package:sca_members_clubs/features/profile/presentation/pages/family_membership_card_screen.dart';
 import 'package:sca_members_clubs/features/membership/presentation/pages/membership_card_screen.dart';
-import 'package:sca_members_clubs/features/auth/presentation/pages/change_password_screen.dart';
+import 'package:sca_members_clubs/features/profile/presentation/pages/change_password_screen.dart';
 import 'package:sca_members_clubs/features/profile/presentation/pages/activity_history_screen.dart';
 import 'package:sca_members_clubs/features/profile/presentation/pages/support_screen.dart';
 import 'package:sca_members_clubs/features/news/presentation/pages/article_detail_screen.dart';

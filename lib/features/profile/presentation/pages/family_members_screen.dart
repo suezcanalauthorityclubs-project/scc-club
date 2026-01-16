@@ -208,21 +208,6 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.pushNamed(context, '/add_family_member');
-        },
-        backgroundColor: AppColors.accent,
-        elevation: 8,
-        icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: Text(
-          "إضافة فرد",
-          style: GoogleFonts.cairo(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-      ),
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sca_members_clubs/core/theme/app_colors.dart';
 import '../widgets/home_app_bar.dart';
 import '../widgets/app_drawer.dart';
@@ -57,7 +58,7 @@ class _HomeViewState extends State<HomeView> {
               physics: const AlwaysScrollableScrollPhysics(),
               child: Column(
                 children: [
-                  const SizedBox(height: kToolbarHeight + 20),
+                  SizedBox(height: kToolbarHeight + 20.h),
 
                   // Dynamic Greeting
                   FutureBuilder<Map<String, dynamic>>(
@@ -68,13 +69,12 @@ class _HomeViewState extends State<HomeView> {
                     },
                   ),
 
-                  // Promo Banner
                   if (state is HomeLoading)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20.w),
                       child: SizedBox(
-                        height: 160,
-                        child: Center(child: CircularProgressIndicator()),
+                        height: 160.h,
+                        child: const Center(child: CircularProgressIndicator()),
                       ),
                     )
                   else if (state is HomeLoaded)
@@ -82,68 +82,81 @@ class _HomeViewState extends State<HomeView> {
                   else
                     const SizedBox.shrink(),
 
-                  const SizedBox(height: 32),
+                  SizedBox(height: 32.h),
 
                   // Quick Actions Section
                   _buildSectionHeader("الخدمات السريعة"),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16.h),
 
                   // Grid
                   Column(
                     children: [
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 3,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16,
-                              childAspectRatio: 0.82,
-                            ),
-                        itemCount: 3,
-                        itemBuilder: (context, index) {
-                          final services = [
-                            _ServiceData(
-                              Icons.badge_rounded,
-                              "كارنيه العضوية",
-                              AppColors.primary,
-                              () {
-                                Navigator.pushNamed(
-                                  context,
-                                  '/membership_card',
-                                  arguments: widget.clubName,
-                                );
-                              },
-                            ),
-                            _ServiceData(
-                              Icons.mail_outline_rounded,
-                              "دعوات الزوار",
-                              const Color(0xFF0EA5E9),
-                              () {
-                                Navigator.pushNamed(context, '/invitations');
-                              },
-                            ),
-                            _ServiceData(
-                              Icons.calendar_today_rounded,
-                              "حجز خدمات",
-                              const Color(0xFF8B5CF6),
-                              () {
-                                Navigator.pushNamed(context, '/booking');
-                              },
-                            ),
-                          ];
-                          final s = services[index];
-                          return _buildActionCard(
-                            icon: s.icon,
-                            label: s.label,
-                            color: s.color,
-                            onTap: s.onTap,
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          int crossAxisCount = 3;
+                          if (constraints.maxWidth > 900) {
+                            crossAxisCount = 5;
+                          } else if (constraints.maxWidth > 600) {
+                            crossAxisCount = 4;
+                          }
+                          return GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            padding: EdgeInsets.symmetric(horizontal: 20.w),
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: crossAxisCount,
+                                  crossAxisSpacing: 16.w,
+                                  mainAxisSpacing: 16.h,
+                                  childAspectRatio: 1.0,
+                                ),
+                            itemCount: 3,
+                            itemBuilder: (context, index) {
+                              final services = [
+                                _ServiceData(
+                                  Icons.badge_rounded,
+                                  "كارنيه العضوية",
+                                  AppColors.primary,
+                                  () {
+                                    Navigator.pushNamed(
+                                      context,
+                                      '/membership_card',
+                                      arguments: widget.clubName,
+                                    );
+                                  },
+                                ),
+                                _ServiceData(
+                                  Icons.mail_outline_rounded,
+                                  "دعوات الزوار",
+                                  const Color(0xFF0EA5E9),
+                                  () {
+                                    Navigator.pushNamed(
+                                      context,
+                                      '/invitations',
+                                    );
+                                  },
+                                ),
+                                _ServiceData(
+                                  Icons.calendar_today_rounded,
+                                  "حجز خدمات",
+                                  const Color(0xFF8B5CF6),
+                                  () {
+                                    Navigator.pushNamed(context, '/booking');
+                                  },
+                                ),
+                              ];
+                              final s = services[index];
+                              return _buildActionCard(
+                                icon: s.icon,
+                                label: s.label,
+                                color: s.color,
+                                onTap: s.onTap,
+                              );
+                            },
                           );
                         },
                       ),
-                      const SizedBox(height: 10),
+                      SizedBox(height: 10.h),
                     ],
                   ),
 
@@ -157,11 +170,11 @@ class _HomeViewState extends State<HomeView> {
                         Navigator.pushNamed(context, '/news');
                       },
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16.h),
                     SizedBox(
-                      height: 310,
+                      height: 310.h,
                       child: ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        padding: EdgeInsets.symmetric(horizontal: 20.w),
                         scrollDirection: Axis.horizontal,
                         itemCount: state.news.length,
                         itemBuilder: (context, index) {
@@ -175,11 +188,11 @@ class _HomeViewState extends State<HomeView> {
                               );
                             },
                             child: Container(
-                              width: 280,
-                              margin: const EdgeInsets.only(left: 16),
+                              width: 280.w,
+                              margin: EdgeInsets.only(left: 16.w),
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(24),
+                                borderRadius: BorderRadius.circular(24.r),
                                 boxShadow: [
                                   BoxShadow(
                                     color: Colors.black.withOpacity(0.04),
@@ -193,14 +206,14 @@ class _HomeViewState extends State<HomeView> {
                                 children: [
                                   // Image
                                   ClipRRect(
-                                    borderRadius: const BorderRadius.vertical(
-                                      top: Radius.circular(24),
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(24.r),
                                     ),
                                     child: Stack(
                                       children: [
                                         Image.network(
                                           newsItem.image,
-                                          height: 150,
+                                          height: 150.h,
                                           width: double.infinity,
                                           fit: BoxFit.cover,
                                           loadingBuilder:
@@ -209,12 +222,12 @@ class _HomeViewState extends State<HomeView> {
                                                   return child;
                                                 }
                                                 return Container(
-                                                  height: 150,
+                                                  height: 150.h,
                                                   color: Colors.grey[50],
-                                                  child: const Center(
+                                                  child: Center(
                                                     child: SizedBox(
-                                                      width: 24,
-                                                      height: 24,
+                                                      width: 24.w,
+                                                      height: 24.w,
                                                       child:
                                                           CircularProgressIndicator(
                                                             strokeWidth: 2,
@@ -226,7 +239,7 @@ class _HomeViewState extends State<HomeView> {
                                           errorBuilder:
                                               (context, error, stackTrace) {
                                                 return Container(
-                                                  height: 150,
+                                                  height: 150.h,
                                                   width: double.infinity,
                                                   color: Colors.grey[100],
                                                   child: Column(
@@ -238,14 +251,14 @@ class _HomeViewState extends State<HomeView> {
                                                         Icons
                                                             .image_not_supported_outlined,
                                                         color: Colors.grey[300],
-                                                        size: 40,
+                                                        size: 40.sp,
                                                       ),
                                                       const SizedBox(height: 8),
                                                       Text(
                                                         "الصورة غير متاحة",
                                                         style:
                                                             GoogleFonts.cairo(
-                                                              fontSize: 10,
+                                                              fontSize: 10.sp,
                                                               color: Colors
                                                                   .grey[400],
                                                             ),
@@ -273,7 +286,7 @@ class _HomeViewState extends State<HomeView> {
                                             child: Text(
                                               newsItem.date,
                                               style: GoogleFonts.cairo(
-                                                fontSize: 10,
+                                                fontSize: 10.sp,
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -284,7 +297,7 @@ class _HomeViewState extends State<HomeView> {
                                     ),
                                   ),
                                   Padding(
-                                    padding: const EdgeInsets.all(16),
+                                    padding: EdgeInsets.all(16.w),
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
@@ -294,30 +307,30 @@ class _HomeViewState extends State<HomeView> {
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: GoogleFonts.cairo(
-                                            fontSize: 15,
+                                            fontSize: 15.sp,
                                             fontWeight: FontWeight.bold,
                                             color: AppColors.textPrimary,
                                             height: 1.2,
                                           ),
                                         ),
-                                        const SizedBox(height: 6),
+                                        SizedBox(height: 6.h),
                                         Text(
                                           newsItem.description,
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
                                           style: GoogleFonts.cairo(
-                                            fontSize: 12,
+                                            fontSize: 12.sp,
                                             color: AppColors.textSecondary,
                                             height: 1.4,
                                           ),
                                         ),
-                                        const SizedBox(height: 12),
+                                        SizedBox(height: 12.h),
                                         Row(
                                           children: [
                                             Text(
                                               "اقرأ المزيد",
                                               style: GoogleFonts.cairo(
-                                                fontSize: 12,
+                                                fontSize: 12.sp,
                                                 color: AppColors.primary,
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -343,7 +356,7 @@ class _HomeViewState extends State<HomeView> {
                   ],
 
                   // Recent News Section
-                  const SizedBox(height: 120),
+                  SizedBox(height: 120.h),
                 ],
               ),
             ),
@@ -373,22 +386,22 @@ class _HomeViewState extends State<HomeView> {
 
   Widget _buildSectionHeader(String title, {VoidCallback? onSeeAllTap}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      padding: EdgeInsets.symmetric(horizontal: 20.0.w),
       child: Row(
         children: [
           Container(
-            width: 4,
-            height: 24,
+            width: 4.w,
+            height: 24.h,
             decoration: BoxDecoration(
               color: AppColors.primary,
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(2.r),
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12.w),
           Text(
             title,
             style: GoogleFonts.cairo(
-              fontSize: 20,
+              fontSize: 20.sp,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
               letterSpacing: -0.5,
@@ -403,7 +416,7 @@ class _HomeViewState extends State<HomeView> {
                 style: GoogleFonts.cairo(
                   color: AppColors.primary,
                   fontWeight: FontWeight.bold,
-                  fontSize: 13,
+                  fontSize: 13.sp,
                 ),
               ),
             ),
@@ -420,11 +433,11 @@ class _HomeViewState extends State<HomeView> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(24.r),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(24.r),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.03),
@@ -437,20 +450,20 @@ class _HomeViewState extends State<HomeView> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: EdgeInsets.all(14.w),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [color.withOpacity(0.15), color.withOpacity(0.05)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(20.r),
               ),
-              child: Icon(icon, color: color, size: 26),
+              child: Icon(icon, color: color, size: 26.sp),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10.h),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: EdgeInsets.symmetric(horizontal: 8.w),
               child: Text(
                 label,
                 textAlign: TextAlign.center,
@@ -458,7 +471,7 @@ class _HomeViewState extends State<HomeView> {
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.cairo(
                   fontWeight: FontWeight.w800,
-                  fontSize: 11,
+                  fontSize: 11.sp,
                   color: AppColors.textPrimary,
                   height: 1.1,
                 ),
