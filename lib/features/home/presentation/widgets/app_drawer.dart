@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sca_members_clubs/core/theme/app_colors.dart';
-import 'package:sca_members_clubs/core/services/firebase_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sca_members_clubs/core/services/permission_service.dart';
+import 'package:sca_members_clubs/core/services/session_manager.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sca_members_clubs/features/home/presentation/cubit/navigation_cubit.dart';
 import 'package:sca_members_clubs/core/routes/app_routes.dart';
+import 'package:get_it/get_it.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -36,24 +38,19 @@ class AppDrawer extends StatelessWidget {
   }
 
   Widget _buildPremiumHeader() {
-    return FutureBuilder<Map<String, dynamic>>(
-      future: FirebaseService().getUserProfile(),
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: _getUserMembershipData(),
       builder: (context, snapshot) {
-        final user = snapshot.data;
-        if (user != null) {
-          PermissionService().setRole(user['role'] ?? 'member');
-        }
         final isLoading = snapshot.connectionState == ConnectionState.waiting;
-        final isSecurity = PermissionService().role == UserRole.security;
+        final data = snapshot.data;
 
-        final name = user?['name'] ?? "جاري التحميل...";
-        final membershipType = isSecurity
-            ? "قطاع الأمن"
-            : (user?['membership_type'] ?? "عضو عامل");
-        final memberId = user?['id'] ?? "---";
-        final workNumber = user?['work_number'] ?? "---";
-        final department = user?['department'] ?? "---";
-        final jobTitle = user?['job_title'] ?? "---";
+        final name = data?['name'] ?? "جاري التحميل...";
+        final role = data?['role'] ?? "عضو";
+        final membershipId = data?['membership_id'] ?? "---";
+        final membershipType = data?['membership_type'] ?? "---";
+        final job = data?['job'] ?? "---";
+        final membershipStatus = data?['membership_status'] ?? "---";
+        final photoUrl = data?['photoUrl'];
 
         return Container(
           width: double.infinity,
@@ -80,19 +77,22 @@ class AppDrawer extends StatelessWidget {
                     child: CircleAvatar(
                       radius: 28,
                       backgroundColor: Colors.white,
+                      backgroundImage: photoUrl != null && photoUrl.isNotEmpty
+                          ? NetworkImage(photoUrl)
+                          : null,
                       child: isLoading
                           ? const SizedBox(
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : Icon(
-                              isSecurity
-                                  ? Icons.admin_panel_settings
-                                  : Icons.person_rounded,
-                              color: AppColors.primary,
-                              size: 32,
-                            ),
+                          : (photoUrl == null || photoUrl.isEmpty
+                                ? Icon(
+                                    Icons.person_rounded,
+                                    color: AppColors.primary,
+                                    size: 32,
+                                  )
+                                : null),
                     ),
                   ),
                   const Spacer(),
@@ -151,7 +151,7 @@ class AppDrawer extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            "أسرتي",
+                            "أفراد أسرتي",
                             style: GoogleFonts.cairo(
                               color: Colors.white,
                               fontSize: 11,
@@ -164,27 +164,50 @@ class AppDrawer extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 2),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 2,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  membershipType,
-                  style: GoogleFonts.cairo(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      role,
+                      style: GoogleFonts.cairo(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      membershipStatus,
+                      style: GoogleFonts.cairo(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
-              // Structured Table Container
+              // Membership Info Container
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -197,7 +220,7 @@ class AppDrawer extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: _buildHeaderStat("رقم العضوية", memberId),
+                          child: _buildHeaderStat("رقم العضوية", membershipId),
                         ),
                         Container(
                           width: 1,
@@ -206,7 +229,10 @@ class AppDrawer extends StatelessWidget {
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: _buildHeaderStat("رقم العمل", workNumber),
+                          child: _buildHeaderStat(
+                            "نوع العضوية",
+                            membershipType,
+                          ),
                         ),
                       ],
                     ),
@@ -217,20 +243,7 @@ class AppDrawer extends StatelessWidget {
                         height: 1,
                       ),
                     ),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildHeaderStat("الإدارة", department),
-                        ),
-                        Container(
-                          width: 1,
-                          height: 24,
-                          color: Colors.white.withOpacity(0.1),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(child: _buildHeaderStat("الوظيفة", jobTitle)),
-                      ],
-                    ),
+                    _buildHeaderStat("الوظيفة", job),
                   ],
                 ),
               ),
@@ -239,6 +252,112 @@ class AppDrawer extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<Map<String, dynamic>?> _getUserMembershipData() async {
+    try {
+      final sessionManager = GetIt.instance<SessionManager>();
+      final role = sessionManager.getSavedRole();
+      final membershipId = sessionManager.getSavedMembershipId();
+
+      print('DEBUG: Role from session: $role');
+      print('DEBUG: MembershipId from session: $membershipId');
+
+      if (membershipId == null || membershipId.isEmpty) {
+        print('DEBUG: MembershipId is null or empty');
+        return {
+          'name': 'مستخدم',
+          'role': _translateRole(role),
+          'membership_id': '---',
+          'membership_type': '---',
+          'job': '---',
+          'membership_status': '---',
+          'photoUrl': null,
+        };
+      }
+
+      // Try first: fetch using membership_id as document ID
+      print('DEBUG: Fetching from main_membership/$membershipId');
+      var membershipDoc = await FirebaseFirestore.instance
+          .collection('main_membership')
+          .doc(membershipId)
+          .get();
+
+      print('DEBUG: Document exists with ID: ${membershipDoc.exists}');
+
+      // If not found, try querying where membership_id field equals membershipId
+      if (!membershipDoc.exists) {
+        print('DEBUG: Document ID not found, querying by membership_id field');
+        final query = await FirebaseFirestore.instance
+            .collection('main_membership')
+            .where('membership_id', isEqualTo: membershipId)
+            .limit(1)
+            .get();
+
+        if (query.docs.isNotEmpty) {
+          membershipDoc = query.docs.first;
+          print('DEBUG: Found by membership_id field');
+        } else {
+          print('DEBUG: Not found by membership_id field either');
+        }
+      }
+
+      print('DEBUG: Document exists: ${membershipDoc.exists}');
+      print('DEBUG: Document data: ${membershipDoc.data()}');
+
+      if (membershipDoc.exists) {
+        final data = membershipDoc.data() ?? {};
+        final result = {
+          'name': data['name'] ?? 'مستخدم',
+          'role': _translateRole(role),
+          'membership_id': data['membership_id'] ?? membershipId,
+          'membership_type': data['membership_type']?.toString() ?? '---',
+          'job': data['job'] ?? '---',
+          'membership_status': data['membership_status'] ?? '---',
+          'photoUrl': data['photoUrl'],
+        };
+        print('DEBUG: Returning result: $result');
+        return result;
+      }
+
+      print('DEBUG: Document does not exist');
+      return {
+        'name': 'مستخدم',
+        'role': _translateRole(role),
+        'membership_id': membershipId,
+        'membership_type': '---',
+        'job': '---',
+        'membership_status': '---',
+        'photoUrl': null,
+      };
+    } catch (e) {
+      print('ERROR: Error fetching membership data: $e');
+      return {
+        'name': 'مستخدم',
+        'role': 'عضو',
+        'membership_id': '---',
+        'membership_type': '---',
+        'job': '---',
+        'membership_status': '---',
+        'photoUrl': null,
+      };
+    }
+  }
+
+  String _translateRole(String? role) {
+    if (role == null) return 'عضو';
+
+    switch (role.toLowerCase()) {
+      case 'member':
+        return 'عضو';
+      case 'wife':
+      case 'child':
+        return 'عضو تابع';
+      case 'security':
+        return 'أمن النادي';
+      default:
+        return 'عضو';
+    }
   }
 
   Widget _buildHeaderStat(String label, String value) {

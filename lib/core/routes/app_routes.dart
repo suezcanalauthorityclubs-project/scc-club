@@ -41,6 +41,7 @@ class Routes {
   // Family & Members
   static const String familyMembers = '/family_members';
   static const String addFamilyMember = '/add_family_member';
+  static const String familyMemberDetail = '/family_member_detail';
   static const String activities = '/activities';
   static const String settings = '/settings';
   static const String membershipCard = '/membership_card';

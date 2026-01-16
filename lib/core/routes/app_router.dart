@@ -20,6 +20,7 @@ import 'package:sca_members_clubs/features/dining/presentation/pages/dining_scre
 import 'package:sca_members_clubs/features/dining/presentation/pages/menu_screen.dart';
 import 'package:sca_members_clubs/features/profile/presentation/pages/family_list_screen.dart';
 import 'package:sca_members_clubs/features/profile/presentation/pages/add_family_member_screen.dart';
+import 'package:sca_members_clubs/features/profile/presentation/pages/family_member_detail_screen.dart';
 import 'package:sca_members_clubs/features/activities/presentation/pages/activities_schedule_screen.dart';
 import 'package:sca_members_clubs/features/profile/domain/entities/family_member.dart';
 import 'package:sca_members_clubs/features/home/presentation/pages/club_selection_screen.dart';
@@ -144,6 +145,12 @@ class AppRouter {
         );
       case Routes.familyMembers:
         return MaterialPageRoute(builder: (_) => const FamilyListScreen());
+      case Routes.familyMemberDetail:
+        final memberData = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => FamilyMemberDetailScreen(memberData: memberData ?? {}),
+          settings: settings,
+        );
       case Routes.addFamilyMember:
         return MaterialPageRoute(builder: (_) => const AddFamilyMemberScreen());
       case Routes.activities:

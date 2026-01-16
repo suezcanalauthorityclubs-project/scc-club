@@ -20,11 +20,11 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await di.init();
 
-  // Seed Firestore with test users (only if collection is empty)
+  // Seed Firestore with test users (force overwrite to ensure data exists)
   try {
     await FirestoreSeeder.seedUsers(
       firestore: FirebaseFirestore.instance,
-      overwrite: false,
+      overwrite: true, // Force seed to ensure test users exist
     );
   } catch (e) {
     print('Failed to seed Firestore: $e');

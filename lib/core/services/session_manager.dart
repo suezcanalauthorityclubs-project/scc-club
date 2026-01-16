@@ -58,4 +58,19 @@ class SessionManager {
   bool hasUserSession() {
     return _prefs.containsKey(_userIdKey);
   }
+
+  /// Get saved username
+  String? getSavedUsername() {
+    return _prefs.getString(_usernameKey);
+  }
+
+  /// Get saved role
+  String? getSavedRole() {
+    return _prefs.getString(_roleKey);
+  }
+
+  /// Get saved membership ID
+  String? getSavedMembershipId() {
+    return _prefs.getString(_membershipIdKey);
+  }
 }

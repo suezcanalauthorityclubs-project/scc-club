@@ -257,35 +257,23 @@ class FamilyMembershipCardScreen extends StatelessWidget {
                     ),
                   ),
 
-                  const Spacer(),
-
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.03),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withOpacity(0.05)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildStatItem("رقم التابع", member.id),
-                        Container(width: 1, height: 30, color: Colors.white12),
-                        _buildStatItem(
-                          "تاريخ الانتهاء",
-                          member.expiryDate.isNotEmpty
-                              ? member.expiryDate
-                              : "---",
-                        ),
-                      ],
-                    ),
+                  // const Spacer(),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildStatItem("رقم التابع", member.id),
+                      // Container(width: 1, height: 30, color: Colors.white12),
+                      // _buildStatItem(
+                      //   "تاريخ الانتهاء",
+                      //   member.expiryDate.isNotEmpty
+                      //       ? member.expiryDate
+                      //       : "---",
+                      // ),
+                    ],
                   ),
 
-                  const SizedBox(height: 12),
-
+                  // const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(

@@ -40,26 +40,47 @@ class FirestoreSeeder {
 
       // Check if collection already has data
       if (!overwrite) {
-        final snapshot = await collection.limit(1).get();
-        if (snapshot.docs.isNotEmpty) {
-          print('Users collection already has data. Skipping seeding.');
-          return;
+        try {
+          final snapshot = await collection.limit(1).get();
+          if (snapshot.docs.isNotEmpty) {
+            print('Users collection already has data. Skipping seeding.');
+            return;
+          }
+        } catch (e) {
+          // Collection might not exist, continue with seeding
+          print('Checking collection status: $e');
         }
       }
 
+      // Clear existing data if overwrite is true
+      if (overwrite) {
+        final existingDocs = await collection.get();
+        for (var doc in existingDocs.docs) {
+          await doc.reference.delete();
+        }
+        print('Cleared existing users.');
+      }
+
       // Add test users
+      int successCount = 0;
       for (final user in _testUsers) {
-        await collection.doc(user['id']).set({
-          'username': user['username'],
-          'password': user['password'],
-          'role': user['role'],
-          if (user['membership_id'] != null)
-            'membership_id': user['membership_id'],
-        });
+        try {
+          await collection.doc(user['id']).set({
+            'username': user['username'],
+            'password': user['password'],
+            'role': user['role'],
+            if (user['membership_id'] != null)
+              'membership_id': user['membership_id'],
+          });
+          successCount++;
+          print('Seeded user: ${user['username']}');
+        } catch (e) {
+          print('Error seeding user ${user['username']}: $e');
+        }
       }
 
       print(
-        'Firestore seeded successfully with ${_testUsers.length} test users.',
+        'Firestore seeding completed: $successCount/${_testUsers.length} users added.',
       );
     } catch (e) {
       print('Error seeding Firestore: $e');
