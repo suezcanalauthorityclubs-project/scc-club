@@ -99,7 +99,7 @@ class ProfileView extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    profile.name,
+                    profile.username,
                     style: GoogleFonts.cairo(
                       color: Colors.white,
                       fontSize: 22,

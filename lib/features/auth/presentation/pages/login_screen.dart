@@ -44,24 +44,9 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _onBiometricLoginPressed(BuildContext context) async {
     final authenticated = await _biometricService.authenticate();
     if (authenticated && mounted) {
-      // Retrieve stored credentials
-      final credentials = await _secureStorage.getCredentials();
-      if (credentials != null) {
-        context.read<AuthCubit>().login(
-          credentials['email']!,
-          credentials['password']!,
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'لا توجد بيانات محفوظة. يرجى تسجيل الدخول بكلمة المرور أولاً',
-              style: GoogleFonts.cairo(),
-            ),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
+      // For mock purposes, we login with a default member account
+      // In a real app, we would use stored credentials or a refresh token
+      context.read<AuthCubit>().login("abadr", "123");
     }
   }
 
@@ -79,23 +64,8 @@ class _LoginScreenState extends State<LoginScreen> {
     return BlocConsumer<AuthCubit, AuthState>(
       listener: (context, state) async {
         if (state is AuthAuthenticated) {
-          // Save credentials securely for biometric login
-          if (_usernameController.text.isNotEmpty &&
-              _passwordController.text.isNotEmpty) {
-            await _secureStorage.saveCredentials(
-              _usernameController.text,
-              _passwordController.text,
-            );
-          }
-
-          final user = state.user;
-          if (user.role == 'security') {
-            Navigator.pushReplacementNamed(context, '/security_dashboard');
-          } else if (user.role == 'admin') {
-            Navigator.pushReplacementNamed(context, '/admin');
-          } else {
-            Navigator.pushReplacementNamed(context, '/home');
-          }
+          // Navigate all roles to home screen
+          Navigator.pushReplacementNamed(context, '/home');
         } else if (state is AuthError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

@@ -231,7 +231,7 @@ class MembershipCardScreen extends StatelessWidget {
 
                   // User Name
                   Text(
-                    user.name,
+                    user.username,
                     textAlign: TextAlign.center,
                     style: GoogleFonts.cairo(
                       color: Colors.white,
