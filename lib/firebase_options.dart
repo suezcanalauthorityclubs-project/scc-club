@@ -24,10 +24,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.android:
         return android;
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for ios - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return ios;
       case TargetPlatform.macOS:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for macos - '
@@ -51,12 +48,13 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'placeholder-api-key',
-    appId: 'placeholder-app-id',
-    messagingSenderId: 'placeholder-sender-id',
-    projectId: 'placeholder-project-id',
-    storageBucket: 'placeholder-storage-bucket',
+    apiKey: 'AIzaSyCsugAX2GeibU4PNhNwHjSHpqyRjsyNMAQ',
+    appId: '1:515120820798:android:287bb8a5e3dbc09d78576f',
+    messagingSenderId: '515120820798',
+    projectId: 'scc-app-21367',
+    storageBucket: 'scc-app-21367.firebasestorage.app',
   );
+
 }
 
 // Minimal FirebaseOptions class to avoid compile errors without firebase_core package
@@ -74,4 +72,14 @@ class FirebaseOptions {
     required this.projectId,
     required this.storageBucket,
   });
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyC0O36ORBgskxuUKJ38bSGJmI5hQZa7S4Q',
+    appId: '1:515120820798:ios:254d4110ae28248578576f',
+    messagingSenderId: '515120820798',
+    projectId: 'scc-app-21367',
+    storageBucket: 'scc-app-21367.firebasestorage.app',
+    iosBundleId: 'com.scaclubs.scaMembersClubs',
+  );
+
 }

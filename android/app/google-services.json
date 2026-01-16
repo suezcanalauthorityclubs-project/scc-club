@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "515120820798",
+    "project_id": "scc-app-21367",
+    "storage_bucket": "scc-app-21367.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:515120820798:android:287bb8a5e3dbc09d78576f",
+        "android_client_info": {
+          "package_name": "com.sca_clubs.sca_members_clubs"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCsugAX2GeibU4PNhNwHjSHpqyRjsyNMAQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
