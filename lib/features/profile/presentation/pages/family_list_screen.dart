@@ -256,20 +256,13 @@ class _FamilyListViewState extends State<FamilyListView> {
                                   image: AssetImage(member['image']),
                                   fit: BoxFit.cover,
                                 )
-                              : null,
+                              : const DecorationImage(
+                                  image: AssetImage(
+                                    'assets/images/user_placeholder.png',
+                                  ),
+                                  fit: BoxFit.cover,
+                                ),
                         ),
-                        child:
-                            (member['image'] == null ||
-                                (member['image'] as String).isEmpty ||
-                                !(member['image'] as String).startsWith(
-                                  'assets',
-                                ))
-                            ? const Icon(
-                                Icons.person_rounded,
-                                color: Colors.grey,
-                                size: 30,
-                              )
-                            : null,
                       ),
                       const SizedBox(width: 16),
                       Expanded(

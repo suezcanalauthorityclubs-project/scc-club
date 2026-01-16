@@ -12,8 +12,88 @@ class BookingRepositoryImpl implements BookingRepository {
 
   @override
   Future<List<Booking>> getBookings({String? clubId}) async {
-    final result = await _firebaseService.getBookings(clubId: clubId);
-    return result.map((e) => BookingModel.fromMap(e)).toList();
+    try {
+      // Fetch from the services collection (real bookings)
+      final servicesResult = await _firebaseService.getMyServices();
+      print(
+        'DEBUG [Repository]: getMyServices returned ${servicesResult.length} items',
+      );
+
+      final serviceBookings = servicesResult.map((e) {
+        print(
+          'DEBUG [Repository]: Mapping service: ${e['service_name']} (ID: ${e['id']})',
+        );
+        return BookingModel.fromMap(e);
+      }).toList();
+
+      // Fetch legacy bookings (static list)
+      final legacyResult = await _firebaseService.getBookings(clubId: clubId);
+      print(
+        'DEBUG [Repository]: getBookings (legacy) returned ${legacyResult.length} items',
+      );
+
+      final legacyBookings = legacyResult
+          .map((e) => BookingModel.fromMap(e))
+          .toList();
+
+      // Combine: Services on top, then legacy bookings
+      final combinedBookings = [...serviceBookings, ...legacyBookings];
+      print(
+        'DEBUG [Repository]: Combined total: ${combinedBookings.length} bookings',
+      );
+
+      // Remove duplicates if any (based on booking ID)
+      final seen = <String>{};
+      final uniqueBookings = <Booking>[];
+      for (final booking in combinedBookings) {
+        if (seen.add(booking.id)) {
+          uniqueBookings.add(booking);
+        }
+      }
+
+      print(
+        'DEBUG [Repository]: After dedup: ${uniqueBookings.length} unique bookings',
+      );
+      return uniqueBookings;
+    } catch (e) {
+      print('ERROR [Repository]: Exception in getBookings: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Stream<List<Booking>> getBookingsStream({String? clubId}) {
+    // 1. Stream from services collection (real-time)
+    final servicesStream = _firebaseService.getMyServicesStream().map((list) {
+      return list.map((e) => BookingModel.fromMap(e)).toList();
+    });
+
+    // 2. Combine with legacy bookings (static)
+    // Map the stream events to async calls that fetch legacy data
+    return servicesStream.asyncMap((serviceBookings) async {
+      try {
+        final legacyResult = await _firebaseService.getBookings(clubId: clubId);
+        final legacyBookings = legacyResult
+            .map((e) => BookingModel.fromMap(e))
+            .toList();
+
+        final combinedBookings = [...serviceBookings, ...legacyBookings];
+
+        // Deduplicate bookings
+        final seen = <String>{};
+        final uniqueBookings = <Booking>[];
+        for (final booking in combinedBookings) {
+          if (seen.add(booking.id)) {
+            uniqueBookings.add(booking);
+          }
+        }
+        return uniqueBookings;
+      } catch (e) {
+        print('Error combining booking streams: $e');
+        // Return at least the streamed bookings on error
+        return serviceBookings.map((e) => e as Booking).toList();
+      }
+    });
   }
 
   @override

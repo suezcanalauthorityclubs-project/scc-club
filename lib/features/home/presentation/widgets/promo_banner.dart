@@ -24,13 +24,16 @@ class _PromoBannerState extends State<PromoBanner> {
 
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
+      // Guard against widget being disposed or inactive
+      if (!mounted) return;
+
       if (_currentPage < widget.promos.length - 1) {
         _currentPage++;
       } else {
         _currentPage = 0;
       }
 
-      if (_pageController.hasClients) {
+      if (mounted && _pageController.hasClients) {
         _pageController.animateToPage(
           _currentPage,
           duration: const Duration(milliseconds: 350),

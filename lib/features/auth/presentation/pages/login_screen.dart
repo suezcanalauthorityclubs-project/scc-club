@@ -35,8 +35,12 @@ class _LoginScreenState extends State<LoginScreen> {
     return BlocConsumer<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state is AuthAuthenticated) {
-          // Navigate all roles to home screen
-          Navigator.pushReplacementNamed(context, '/home');
+          // Navigate based on user role
+          if (state.user.role.toLowerCase() == 'security') {
+            Navigator.pushReplacementNamed(context, '/security_dashboard');
+          } else {
+            Navigator.pushReplacementNamed(context, '/home');
+          }
         } else if (state is AuthError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

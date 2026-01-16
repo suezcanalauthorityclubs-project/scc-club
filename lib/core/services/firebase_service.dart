@@ -1,10 +1,16 @@
 import 'dart:async';
 import 'mock_data.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'session_manager.dart';
+import 'package:sca_members_clubs/core/di/injection_container.dart';
 
 class FirebaseService {
   static final FirebaseService _instance = FirebaseService._internal();
   factory FirebaseService() => _instance;
   FirebaseService._internal();
+
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  SessionManager? _sessionManager;
 
   Future<void> _simulateDelay() async {
     await Future.delayed(const Duration(milliseconds: 800));
@@ -229,8 +235,41 @@ class FirebaseService {
 
   // --- Other Methods ---
   Future<int> getCurrentVisitorsCount() async {
-    await _simulateDelay();
-    return MockData.activeVisitors.length;
+    try {
+      // Initialize session manager from DI if not already done
+      _sessionManager ??= sl<SessionManager>();
+
+      final membershipId =
+          _sessionManager?.getSavedMembershipId() ?? _currentUser?['id'];
+
+      if (membershipId == null || membershipId.isEmpty) {
+        return 0;
+      }
+
+      // Query invitations where isScanned = true
+      final snapshot = await _db
+          .collection('invitations')
+          .where('membership_id', isEqualTo: membershipId)
+          .where('isScanned', isEqualTo: true)
+          .get();
+
+      // Filter by expiry date - only count non-expired invitations
+      final now = DateTime.now();
+      final activeCount = snapshot.docs.where((doc) {
+        final data = doc.data();
+        final expiryDate = data['visit_expiration_date'];
+
+        if (expiryDate is Timestamp) {
+          return expiryDate.toDate().isAfter(now);
+        }
+        return false;
+      }).length;
+
+      return activeCount;
+    } catch (e) {
+      print('ERROR: Error fetching current visitors count: $e');
+      return 0;
+    }
   }
 
   Future<void> requestAdditionalInvitations() async {
@@ -262,22 +301,216 @@ class FirebaseService {
   }
 
   Future<List<Map<String, dynamic>>> getInvitations() async {
-    await _simulateDelay();
-    return MockData.invitations;
+    try {
+      // Initialize session manager from DI if not already done
+      _sessionManager ??= sl<SessionManager>();
+
+      final membershipId =
+          _sessionManager?.getSavedMembershipId() ?? _currentUser?['id'];
+      print('DEBUG: Fetching invitations for membershipId: $membershipId');
+
+      if (membershipId == null || membershipId.isEmpty) {
+        print('ERROR: No membership ID found in session or current user');
+        return [];
+      }
+
+      // Query invitations by membership_id field
+      final snapshot = await _db
+          .collection('invitations')
+          .where('membership_id', isEqualTo: membershipId)
+          .get();
+
+      final invitations = snapshot.docs.map((doc) {
+        final data = doc.data();
+        // Handle Timestamp to String conversion for UI compatibility
+        String formattedDate = "";
+        if (data['visit_date'] is Timestamp) {
+          final date = (data['visit_date'] as Timestamp).toDate();
+          formattedDate = "${date.day}/${date.month}/${date.year}";
+        }
+
+        return {
+          ...data,
+          'id': doc.id,
+          'guest_name': data['type'] == 'بدون عضو'
+              ? (data['visitor_name'] ?? "")
+              : "في وجود العضو",
+          'guest_count': data['number_of_visitors'] ?? 1,
+          'status': data['status'] ?? "active",
+          'date': formattedDate,
+        };
+      }).toList();
+
+      // Sort in memory to avoid needing a composite index in Firestore
+      invitations.sort((a, b) {
+        final aTime = a['created_at'] as Timestamp?;
+        final bTime = b['created_at'] as Timestamp?;
+        if (aTime == null || bTime == null) return 0;
+        return bTime.compareTo(aTime);
+      });
+
+      return invitations;
+    } catch (e) {
+      print('❌ Error fetching invitations: $e');
+      return [];
+    }
   }
 
   Future<List<Map<String, dynamic>>> getInvitationCards() async {
-    await _simulateDelay();
-    return MockData.invitationCards;
+    try {
+      // Initialize session manager from DI if not already done
+      _sessionManager ??= sl<SessionManager>();
+
+      final membershipId =
+          _sessionManager?.getSavedMembershipId() ?? _currentUser?['id'];
+      print('DEBUG: Fetching cards for membershipId: $membershipId');
+
+      if (membershipId == null || membershipId.isEmpty) {
+        print('ERROR: No membership ID found for cards');
+        return [];
+      }
+
+      // Fetch membership balance from main_membership collection
+      final membershipDoc = await _db
+          .collection('main_membership')
+          .where('membership_id', isEqualTo: membershipId)
+          .limit(1)
+          .get();
+
+      int remaining = 0;
+      int used = 0;
+
+      if (membershipDoc.docs.isNotEmpty) {
+        final doc = membershipDoc.docs.first;
+        remaining = (doc['Remaining_invitations'] as num?)?.toInt() ?? 0;
+        used = (doc['Used_invitations'] as num?)?.toInt() ?? 0;
+      }
+
+      final int total = remaining + used;
+
+      print(
+        'DEBUG: Invitation cards - remaining: $remaining, used: $used, total: $total',
+      );
+
+      // Build annual balance card
+      final annualCard = {
+        "id": "card_001",
+        "type": "الرصيد السنوي",
+        "total": total,
+        "Remaining_invitations": remaining,
+        "Used_invitations": used,
+        "expiry": "2026-12-31",
+        "color": "0xFF003A8F",
+      };
+
+      // Fetch additional cards from mock data (static)
+      final additionalCards = MockData.invitationCards
+          .where((c) => c['type'].toString().contains('إضافي'))
+          .toList();
+
+      return [annualCard, ...additionalCards];
+    } catch (e) {
+      print('❌ Error fetching invitation cards: $e');
+      return [];
+    }
   }
 
   Future<void> createInvitation(Map<String, dynamic> inv) async {
-    await _simulateDelay();
-    MockData.invitations.insert(0, {
-      ...inv,
-      "id": "inv_${DateTime.now().millisecondsSinceEpoch}",
-      "status": "active",
-    });
+    try {
+      // Initialize session manager from DI if not already done
+      _sessionManager ??= sl<SessionManager>();
+
+      final membershipId =
+          _sessionManager?.getSavedMembershipId() ?? _currentUser?['id'];
+      print('DEBUG: Creating invitation for membershipId: $membershipId');
+
+      if (membershipId == null || membershipId.isEmpty) {
+        throw Exception(
+          'No membership ID found in session or current user profile',
+        );
+      }
+
+      // Build Firestore document structure based on invitation type
+      final invitationData = {
+        "membership_id": membershipId,
+        "type": inv['type'],
+        "visit_date": inv['visit_date'], // DateTime/Timestamp
+        "visit_expiration_date":
+            inv['visit_expiration_date'], // DateTime/Timestamp
+        "isScanned": false,
+        "status": "active",
+        "created_at": FieldValue.serverTimestamp(),
+      };
+
+      // Determine number of invitations to deduct
+      int invitationsToDeduct = 1;
+      if (inv['type'] == 'بدون عضو') {
+        invitationData['visitor_name'] = inv['visitor_name'] ?? '';
+        invitationData['national_id'] = inv['national_id'] ?? '';
+        invitationData['visitor_phone_number'] =
+            inv['visitor_phone_number'] ?? '';
+      } else {
+        // For "في وجود العضو"
+        invitationsToDeduct = inv['number_of_visitors'] ?? 1;
+        invitationData['number_of_visitors'] = invitationsToDeduct;
+      }
+
+      // Create document with auto-generated ID
+      print(
+        'DEBUG: Inserting invitation into Firestore collection: invitations',
+      );
+      final docRef = await _db.collection('invitations').add(invitationData);
+      print('✅ Invitation created with ID: ${docRef.id}');
+
+      // Update remaining and used invitations in main_membership
+      // First, find the document by membership_id field
+      final membershipQuery = await _db
+          .collection('main_membership')
+          .where('membership_id', isEqualTo: membershipId)
+          .limit(1)
+          .get();
+
+      if (membershipQuery.docs.isEmpty) {
+        print('ERROR: Membership document not found for: $membershipId');
+        return;
+      }
+
+      final mainMembershipRef = membershipQuery.docs.first.reference;
+
+      await _db.runTransaction((transaction) async {
+        final mainMembershipDoc = await transaction.get(mainMembershipRef);
+
+        int currentRemaining = 0;
+        int currentUsed = 0;
+
+        if (mainMembershipDoc.exists) {
+          currentRemaining =
+              (mainMembershipDoc['Remaining_invitations'] as num?)?.toInt() ??
+              0;
+          currentUsed =
+              (mainMembershipDoc['Used_invitations'] as num?)?.toInt() ?? 0;
+        }
+
+        // Calculate new values
+        final newRemaining = (currentRemaining - invitationsToDeduct)
+            .clamp(0, double.infinity)
+            .toInt();
+        final newUsed = currentUsed + invitationsToDeduct;
+
+        // Update the found document
+        transaction.set(mainMembershipRef, {
+          'Remaining_invitations': newRemaining,
+          'Used_invitations': newUsed,
+          'last_updated': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+        print(
+          '✅ Updated main_membership: remaining=$newRemaining, used=$newUsed',
+        );
+      });
+    } catch (e) {
+      print('❌ Error creating invitation: $e');
+      rethrow;
+    }
   }
 
   Future<List<Map<String, dynamic>>> getActiveVisitors() async {
@@ -328,6 +561,225 @@ class FirebaseService {
   Future<void> addBooking(Map<String, dynamic> b) async {
     await _simulateDelay();
     MockData.bookings.insert(0, b);
+  }
+
+  /// Add a service booking to the services collection
+  Future<void> addService(Map<String, dynamic> serviceData) async {
+    try {
+      // Initialize session manager from DI if not already done
+      _sessionManager ??= sl<SessionManager>();
+
+      final membershipId =
+          _sessionManager?.getSavedMembershipId() ?? _currentUser?['id'];
+
+      if (membershipId == null || membershipId.isEmpty) {
+        throw Exception('No membership ID found in session');
+      }
+
+      // Build the service document structure
+      final documentData = {
+        'service_id': serviceData['id'] ?? serviceData['title'] ?? 'unknown',
+        'service_date': serviceData['date'] != null
+            ? Timestamp.fromDate(DateTime.parse(serviceData['date']))
+            : FieldValue.serverTimestamp(),
+        'service_timeslot':
+            serviceData['time'] ?? serviceData['selectedTime'] ?? '',
+        'service_cost': _parsePriceToNum(
+          serviceData['price'] ?? serviceData['total_price'] ?? 0,
+        ),
+        'membership_id': membershipId,
+        'beneficiary_name': !serviceData['is_self_booking']
+            ? serviceData['guest_name']
+            : null,
+        'beneficiary_national_id': !serviceData['is_self_booking']
+            ? serviceData['guest_national_id']
+            : null,
+        'created_at': FieldValue.serverTimestamp(),
+      };
+
+      // Remove null values for optional fields
+      documentData.removeWhere((key, value) => value == null);
+
+      // Add to services collection
+      await _db.collection('services').add(documentData);
+
+      print('✅ Service booking created successfully');
+    } catch (e) {
+      print('❌ Error creating service booking: $e');
+      rethrow;
+    }
+  }
+
+  /// Listen to user's service bookings from the services collection
+  Stream<List<Map<String, dynamic>>> getMyServicesStream() {
+    // Initialize session manager from DI if not already done
+    _sessionManager ??= sl<SessionManager>();
+
+    final membershipId =
+        _sessionManager?.getSavedMembershipId() ?? _currentUser?['id'];
+
+    if (membershipId == null || membershipId.isEmpty) {
+      print('ERROR: No membership ID found for fetching services stream');
+      return const Stream.empty();
+    }
+
+    return _db
+        .collection('services')
+        .where('membership_id', isEqualTo: membershipId)
+        .snapshots()
+        .map((snapshot) {
+          print(
+            'DEBUG: Stream Update - ${snapshot.docs.length} services found',
+          );
+          final services = _parseServicesSnapshot(snapshot);
+
+          // Sort by created_at in memory
+          services.sort((a, b) {
+            final aDate = a['created_at'] as Timestamp?;
+            final bDate = b['created_at'] as Timestamp?;
+            if (aDate == null || bDate == null) return 0;
+            return bDate.compareTo(aDate);
+          });
+
+          return services;
+        });
+  }
+
+  /// Fetch user's service bookings from the services collection
+  Future<List<Map<String, dynamic>>> getMyServices() async {
+    try {
+      // Initialize session manager from DI if not already done
+      _sessionManager ??= sl<SessionManager>();
+
+      final membershipId =
+          _sessionManager?.getSavedMembershipId() ?? _currentUser?['id'];
+
+      print(
+        'DEBUG [FirebaseService]: SessionManager membership_id: $membershipId',
+      );
+
+      if (membershipId == null || membershipId.isEmpty) {
+        print('ERROR: No membership ID found for fetching services');
+        // Try to get all services as fallback for debugging
+        print('DEBUG: Fetching ALL services as fallback...');
+        return await _getAllServices();
+      }
+
+      print('DEBUG: Fetching services for membershipId: $membershipId');
+
+      // Query services by membership_id (no orderBy to avoid index requirement)
+      final snapshot = await _db
+          .collection('services')
+          .where('membership_id', isEqualTo: membershipId)
+          .get();
+
+      print('DEBUG: Query returned ${snapshot.docs.length} documents');
+
+      if (snapshot.docs.isEmpty) {
+        print(
+          'DEBUG: No services found for this membership_id, trying fallback...',
+        );
+        return await _getAllServices();
+      }
+
+      final services = _parseServicesSnapshot(snapshot);
+
+      // Sort by created_at in memory
+      services.sort((a, b) {
+        final aDate = a['created_at'] as Timestamp?;
+        final bDate = b['created_at'] as Timestamp?;
+        if (aDate == null || bDate == null) return 0;
+        return bDate.compareTo(aDate);
+      });
+
+      return services;
+    } catch (e) {
+      print('❌ Error in getMyServices: $e');
+      print('ERROR Stack: ${e.toString()}');
+      return [];
+    }
+  }
+
+  /// Get ALL services from collection (for debugging)
+  Future<List<Map<String, dynamic>>> _getAllServices() async {
+    try {
+      final snapshot = await _db.collection('services').get();
+      print(
+        'DEBUG: _getAllServices found ${snapshot.docs.length} total services',
+      );
+
+      for (var doc in snapshot.docs) {
+        print(
+          'DEBUG: Service doc - ID: ${doc.id}, membership_id: ${doc.data()['membership_id']}',
+        );
+      }
+
+      final services = _parseServicesSnapshot(snapshot);
+      return services;
+    } catch (e) {
+      print('❌ Error in _getAllServices: $e');
+      return [];
+    }
+  }
+
+  num _parsePriceToNum(dynamic price) {
+    if (price == null) return 0;
+    if (price is num) return price;
+    if (price is String) {
+      // Remove any non-numeric characters except decimal points
+      final cleaned = price.replaceAll(RegExp(r'[^0-9.]'), '');
+      return num.tryParse(cleaned) ?? 0;
+    }
+    return 0;
+  }
+
+  /// Map service IDs to Arabic service names
+  String _mapServiceIdToName(String serviceId) {
+    const serviceMap = {
+      's1': 'حجز فوتوسيشن',
+      's2': 'كرة قدم خماسي',
+      's3': 'حمام السباحة',
+      's4': 'قاعة المناسبات',
+      's5': 'تنس طاولة',
+      's6': 'اسكواش',
+      's7': 'النشاط الرياضي',
+      's8': 'المطاعم والكافيهات',
+    };
+    return serviceMap[serviceId] ?? serviceId;
+  }
+
+  List<Map<String, dynamic>> _parseServicesSnapshot(
+    QuerySnapshot<Map<String, dynamic>> snapshot,
+  ) {
+    final services = snapshot.docs.map((doc) {
+      final data = doc.data();
+
+      // Convert Timestamp to formatted string for UI
+      String formattedDate = "";
+      if (data['service_date'] is Timestamp) {
+        final date = (data['service_date'] as Timestamp).toDate();
+        formattedDate = "${date.day}/${date.month}/${date.year}";
+      }
+
+      // Map service_id to Arabic name
+      final serviceId = data['service_id'] ?? 'خدمة';
+      final serviceName = _mapServiceIdToName(serviceId);
+
+      return {
+        ...data,
+        'id': doc.id,
+        'date': formattedDate,
+        'service_name': serviceName,
+        'time': data['service_timeslot'] ?? '',
+        'price': data['service_cost'] ?? 0,
+        'total_price': data['service_cost'] ?? 0,
+        'status': 'قيد المراجعة', // Default status
+        'created_at': data['created_at'],
+      };
+    }).toList();
+
+    print('✅ Parsed ${services.length} services');
+    return services;
   }
 
   Future<List<Map<String, dynamic>>> getPromos() async {
@@ -383,5 +835,136 @@ class FirebaseService {
     await _simulateDelay();
     final i = MockData.invitationRequests.indexWhere((r) => r['id'] == reqId);
     if (i != -1) MockData.invitationRequests[i]['status'] = status;
+  }
+
+  /// Scan an invitation QR code and mark it as scanned if not expired
+  Future<Map<String, dynamic>> scanInvitation(String invitationId) async {
+    try {
+      // Get the invitation document
+      final invDoc = await _db
+          .collection('invitations')
+          .doc(invitationId)
+          .get();
+
+      if (!invDoc.exists) {
+        return {
+          'success': false,
+          'message': 'الدعوة غير موجودة',
+          'type': 'error',
+        };
+      }
+
+      final invData = invDoc.data() ?? {};
+
+      // Check if invitation is expired
+      final expirationDate = invData['visit_expiration_date'] as Timestamp?;
+      if (expirationDate == null) {
+        return {
+          'success': false,
+          'message': 'بيانات الدعوة غير صحيحة',
+          'type': 'error',
+        };
+      }
+
+      if (expirationDate.toDate().isBefore(DateTime.now())) {
+        return {
+          'success': false,
+          'message': 'الدعوة منتهية الصلاحية',
+          'type': 'expired',
+        };
+      }
+
+      // Check if already scanned
+      if (invData['isScanned'] == true) {
+        return {
+          'success': false,
+          'message': 'تم مسح هذه الدعوة مسبقاً',
+          'type': 'already_scanned',
+        };
+      }
+
+      // Update invitation to mark as scanned
+      await _db.collection('invitations').doc(invitationId).update({
+        'isScanned': true,
+        'scanned_at': FieldValue.serverTimestamp(),
+      });
+
+      return {
+        'success': true,
+        'message': 'تم قبول الدعوة بنجاح',
+        'type': 'invitation',
+        'visitor_name': invData['visitor_name'] ?? 'زائر',
+        'membership_id': invData['membership_id'],
+        'visit_date': invData['visit_date'],
+      };
+    } catch (e) {
+      print('Error scanning invitation: $e');
+      return {
+        'success': false,
+        'message': 'حدث خطأ أثناء معالجة الدعوة',
+        'type': 'error',
+      };
+    }
+  }
+
+  /// Record a club visit from membership QR code
+  Future<Map<String, dynamic>> recordClubVisit(String membershipId) async {
+    try {
+      // Verify membership exists
+      var membershipDoc = await _db
+          .collection('main_membership')
+          .doc(membershipId)
+          .get();
+
+      if (!membershipDoc.exists) {
+        // Try querying by membership_id field
+        final query = await _db
+            .collection('main_membership')
+            .where('membership_id', isEqualTo: membershipId)
+            .limit(1)
+            .get();
+
+        if (query.docs.isEmpty) {
+          return {
+            'success': false,
+            'message': 'العضوية غير موجودة',
+            'type': 'error',
+          };
+        }
+        membershipDoc = query.docs.first;
+      }
+
+      final membershipData = membershipDoc.data() ?? {};
+      final membershipName = membershipData['name'] ?? 'عضو';
+
+      // Create a new visit record in club_visits collection
+      final visitId = _db.collection('club_visits').doc().id;
+      final now = DateTime.now();
+
+      // Set visit expiration to 24 hours from now
+      final expirationDate = now.add(const Duration(days: 1));
+
+      await _db.collection('club_visits').doc(visitId).set({
+        'membership_id': membershipId,
+        'visit_date': FieldValue.serverTimestamp(),
+        'visit_expiration_date': Timestamp.fromDate(expirationDate),
+      });
+
+      return {
+        'success': true,
+        'message': 'تم تسجيل الدخول بنجاح',
+        'type': 'membership',
+        'member_name': membershipName,
+        'membership_id': membershipId,
+        'visit_date': Timestamp.now(),
+      };
+    } catch (e) {
+      print('Error recording club visit: $e');
+      return {
+        'success': false,
+        'message': 'حدث خطأ أثناء تسجيل الدخول',
+        'type': 'error',
+      };
+    }
   }
 }

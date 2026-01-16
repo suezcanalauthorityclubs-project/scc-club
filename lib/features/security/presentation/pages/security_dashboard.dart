@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sca_members_clubs/core/theme/app_colors.dart';
 import 'package:sca_members_clubs/core/widgets/sca_app_bar.dart';
-import 'package:sca_members_clubs/features/home/presentation/widgets/app_drawer.dart';
+import 'package:sca_members_clubs/features/security/presentation/widgets/security_drawer.dart';
 
 class SecurityDashboard extends StatelessWidget {
   const SecurityDashboard({super.key});
@@ -11,16 +11,14 @@ class SecurityDashboard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: const ScaAppBar(
-        title: "منظومة الأمن - بوابة النادي",
-      ),
-      drawer: const AppDrawer(),
+      appBar: const ScaAppBar(title: "منظومة الأمن - بوابة النادي"),
+      drawer: const SecurityDrawer(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-             // Welcome Info
+            // Welcome Info
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -41,7 +39,10 @@ class SecurityDashboard extends StatelessWidget {
                       children: [
                         Text(
                           "مسؤول الأمن المناوب",
-                          style: GoogleFonts.cairo(color: Colors.white70, fontSize: 13),
+                          style: GoogleFonts.cairo(
+                            color: Colors.white70,
+                            fontSize: 13,
+                          ),
                         ),
                         Text(
                           "نادي التجديف (الإسماعيلية)",
@@ -58,7 +59,7 @@ class SecurityDashboard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 30),
-            
+
             Text(
               "المهام الأساسية",
               style: GoogleFonts.cairo(
@@ -68,7 +69,7 @@ class SecurityDashboard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            
+
             // Grid of Actions
             GridView.count(
               shrinkWrap: true,
@@ -109,7 +110,7 @@ class SecurityDashboard extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 30),
             // Current Status
             Container(
@@ -121,14 +122,17 @@ class SecurityDashboard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                   const Icon(Icons.info_outline, color: Colors.blue),
-                   const SizedBox(width: 12),
-                   Expanded(
-                     child: Text(
-                       "تأكد من فحص الهوية الشخصية مع مسح كود QR للدعوات الخارجية.",
-                       style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textSecondary),
-                     ),
-                   ),
+                  const Icon(Icons.info_outline, color: Colors.blue),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      "تأكد من فحص الهوية الشخصية مع مسح كود QR للدعوات الخارجية.",
+                      style: GoogleFonts.cairo(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -193,14 +197,21 @@ class SecurityDashboard extends StatelessWidget {
                 top: 12,
                 right: 12,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.red,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     badgeCount,
-                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),

@@ -7,6 +7,7 @@ import 'package:sca_members_clubs/features/profile/presentation/cubit/profile_st
 import 'package:sca_members_clubs/features/auth/domain/entities/user_entity.dart';
 import 'package:sca_members_clubs/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:sca_members_clubs/core/di/injection_container.dart';
+import 'package:sca_members_clubs/core/services/session_manager.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -107,7 +108,7 @@ class ProfileView extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    "عضوية رقم: ${profile.id}",
+                    "عضوية رقم: ${sl<SessionManager>().getSavedMembershipId()}",
                     style: GoogleFonts.cairo(
                       color: Colors.white.withOpacity(0.9),
                       fontSize: 14,

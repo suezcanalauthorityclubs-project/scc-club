@@ -9,8 +9,21 @@ import 'package:sca_members_clubs/features/home/presentation/cubit/navigation_cu
 import 'package:sca_members_clubs/core/routes/app_routes.dart';
 import 'package:get_it/get_it.dart';
 
-class AppDrawer extends StatelessWidget {
+class AppDrawer extends StatefulWidget {
   const AppDrawer({super.key});
+
+  @override
+  State<AppDrawer> createState() => _AppDrawerState();
+}
+
+class _AppDrawerState extends State<AppDrawer> {
+  late Future<Map<String, dynamic>?> _membershipDataFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _membershipDataFuture = _getUserMembershipData();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,9 +52,8 @@ class AppDrawer extends StatelessWidget {
 
   Widget _buildPremiumHeader() {
     return FutureBuilder<Map<String, dynamic>?>(
-      future: _getUserMembershipData(),
+      future: _membershipDataFuture,
       builder: (context, snapshot) {
-        final isLoading = snapshot.connectionState == ConnectionState.waiting;
         final data = snapshot.data;
 
         final name = data?['name'] ?? "جاري التحميل...";
@@ -50,7 +62,6 @@ class AppDrawer extends StatelessWidget {
         final membershipType = data?['membership_type'] ?? "---";
         final job = data?['job'] ?? "---";
         final membershipStatus = data?['membership_status'] ?? "---";
-        final photoUrl = data?['photoUrl'];
 
         return Container(
           width: double.infinity,
@@ -77,22 +88,9 @@ class AppDrawer extends StatelessWidget {
                     child: CircleAvatar(
                       radius: 28,
                       backgroundColor: Colors.white,
-                      backgroundImage: photoUrl != null && photoUrl.isNotEmpty
-                          ? NetworkImage(photoUrl)
-                          : null,
-                      child: isLoading
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : (photoUrl == null || photoUrl.isEmpty
-                                ? Icon(
-                                    Icons.person_rounded,
-                                    color: AppColors.primary,
-                                    size: 32,
-                                  )
-                                : null),
+                      backgroundImage: const AssetImage(
+                        'assets/images/user_placeholder.png',
+                      ),
                     ),
                   ),
                   const Spacer(),
