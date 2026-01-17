@@ -1,6 +1,8 @@
 import 'dart:ui';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:sca_members_clubs/core/theme/app_colors.dart';
 import 'package:sca_members_clubs/core/widgets/primary_button.dart';
 import 'package:sca_members_clubs/core/widgets/sca_app_bar.dart';
@@ -233,9 +235,10 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
   }
 
   Widget _buildBalanceCard(Map<String, dynamic> card) {
-    final int total = card['total'];
-    final int used = card['used'];
-    final int remaining = total - used;
+    final int total =
+        (card['Used_invitations'] ?? 0) + (card['Remaining_invitations'] ?? 0);
+    final int used = card['Used_invitations'];
+    final int remaining = card['Remaining_invitations'] ?? (total - used);
     final double usagePercent = total > 0 ? used / total : 0;
     final Color cardColor = Color(int.parse(card['color']));
 
@@ -612,12 +615,21 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
   Widget _buildInvitationCard(BuildContext context, Map<String, dynamic> inv) {
     final guestName = inv['guest_name'] ?? "";
     final date = inv['date'] ?? "";
-    final status = inv['status'] ?? "active";
     final guestCount = inv['guest_count'] ?? 1;
 
-    bool isInside = status == "inside";
-    bool isActive = status == "active";
-    bool isExpired = status == "expired";
+    // Determine status based on expiry date and isScanned
+    bool isExpired = false;
+    bool isInside = false;
+
+    final expiryDate = inv['visit_expiration_date'];
+    if (expiryDate is Timestamp) {
+      isExpired = expiryDate.toDate().isBefore(DateTime.now());
+    }
+
+    final isScanned = inv['isScanned'] ?? false;
+    isInside = isScanned && !isExpired;
+
+    bool isActive = !isExpired && !isInside;
 
     Color statusColor = isActive
         ? AppColors.primary
@@ -743,12 +755,52 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
   void _showInvitationDetails(BuildContext context, Map<String, dynamic> inv) {
     final String name = inv['guest_name'] ?? "";
     final String date = inv['date'] ?? "";
-    final String status = inv['status'] ?? "active";
     final int guestCount = inv['guest_count'] ?? 1;
-    final String? expiry = inv['expiry'];
 
-    bool isInside = status == "inside";
-    bool isActive = status == "active";
+    // Determine status based on expiry date and isScanned
+    bool isExpired = false;
+    bool isInside = false;
+
+    final expiryDate = inv['visit_expiration_date'];
+    String formattedExpiryTime = "";
+
+    if (expiryDate is Timestamp) {
+      final expiryDateTime = expiryDate.toDate();
+      isExpired = expiryDateTime.isBefore(DateTime.now());
+
+      // Format date
+      final months = [
+        "يناير",
+        "فبراير",
+        "مارس",
+        "أبريل",
+        "مايو",
+        "يونيو",
+        "يوليو",
+        "أغسطس",
+        "سبتمبر",
+        "أكتوبر",
+        "نوفمبر",
+        "ديسمبر",
+      ];
+      final day = expiryDateTime.day;
+      final month = months[expiryDateTime.month - 1];
+      final year = expiryDateTime.year;
+
+      // Format time
+      int hour = expiryDateTime.hour;
+      int minute = expiryDateTime.minute;
+      String period = hour >= 12 ? "مساءً" : "صباحاً";
+      int displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+
+      formattedExpiryTime =
+          "$day $month $year - ${displayHour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} $period";
+    }
+
+    final isScanned = inv['isScanned'] ?? false;
+    isInside = isScanned && !isExpired;
+
+    bool isActive = !isExpired && !isInside;
 
     showDialog(
       context: context,
@@ -825,10 +877,12 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
                               ),
                             ],
                           ),
-                          child: const Icon(
-                            Icons.qr_code_2_rounded,
+                          child: QrImageView(
+                            data: inv['id'] ?? "",
+                            version: QrVersions.auto,
                             size: 180,
-                            color: Colors.black87,
+                            gapless: true,
+                            backgroundColor: Colors.white,
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -863,12 +917,12 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
                         date,
                       ),
 
-                      if (expiry != null && isActive) ...[
+                      if (isActive) ...[
                         const Divider(height: 24),
                         _buildModernDetailRow(
                           Icons.timer_outlined,
                           "صالح حتى",
-                          "06:00 مساءً",
+                          formattedExpiryTime,
                         ),
                       ],
 

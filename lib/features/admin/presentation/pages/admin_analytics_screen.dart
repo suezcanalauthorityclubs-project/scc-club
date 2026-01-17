@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sca_members_clubs/core/theme/app_colors.dart';
@@ -14,7 +13,6 @@ class AdminAnalyticsScreen extends StatefulWidget {
 
 class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
   late Future<Map<String, dynamic>> _analyticsFuture;
-  Map<String, dynamic>? _adminProfile;
 
   @override
   void initState() {
@@ -24,8 +22,9 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
 
   Future<void> _loadData() async {
     final profile = await FirebaseService().getUserProfile();
-    _adminProfile = profile;
-    _analyticsFuture = FirebaseService().getAnalyticsData(clubId: profile['club_id']);
+    _analyticsFuture = FirebaseService().getAnalyticsData(
+      clubId: profile['club_id'],
+    );
     if (mounted) setState(() {});
   }
 
@@ -37,9 +36,10 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
       body: FutureBuilder<Map<String, dynamic>>(
         future: _analyticsFuture,
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (!snapshot.hasData)
+            return const Center(child: CircularProgressIndicator());
           final data = snapshot.data!;
-          
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -65,27 +65,54 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
   Widget _buildQuickStats(Map<String, dynamic> data) {
     return Row(
       children: [
-        Expanded(child: _buildStatCard("زوار اليوم", data['visitors_today'].toString(), Icons.people, Colors.blue)),
+        Expanded(
+          child: _buildStatCard(
+            "زوار اليوم",
+            data['visitors_today'].toString(),
+            Icons.people,
+            Colors.blue,
+          ),
+        ),
         const SizedBox(width: 12),
-        Expanded(child: _buildStatCard("إيرادات الشهر", data['revenue_this_month'], Icons.monetization_on, Colors.green)),
+        Expanded(
+          child: _buildStatCard(
+            "إيرادات الشهر",
+            data['revenue_this_month'],
+            Icons.monetization_on,
+            Colors.green,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10),
+        ],
       ),
       child: Column(
         children: [
           Icon(icon, color: color, size: 24),
           const SizedBox(height: 8),
-          Text(value, style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 16)),
-          Text(label, style: GoogleFonts.cairo(fontSize: 11, color: Colors.grey)),
+          Text(
+            value,
+            style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          Text(
+            label,
+            style: GoogleFonts.cairo(fontSize: 11, color: Colors.grey),
+          ),
         ],
       ),
     );
@@ -95,7 +122,10 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
     return Container(
       height: 150,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -117,18 +147,31 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
   Widget _buildMembershipPie(List<dynamic> distribution) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Column(
         children: distribution.map((item) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Row(
               children: [
-                Container(width: 12, height: 12, decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle)),
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
                 const SizedBox(width: 12),
                 Text(item['label'], style: GoogleFonts.cairo(fontSize: 13)),
                 const Spacer(),
-                Text("${item['value']}%", style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+                Text(
+                  "${item['value']}%",
+                  style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+                ),
               ],
             ),
           );
@@ -138,6 +181,9 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
   }
 
   Widget _buildSectionTitle(String title) {
-    return Text(title, style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 15));
+    return Text(
+      title,
+      style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 15),
+    );
   }
 }

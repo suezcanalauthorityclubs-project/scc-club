@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sca_members_clubs/core/theme/app_colors.dart';
 import 'package:sca_members_clubs/features/membership/presentation/widgets/dynamic_qr_widget.dart';
 import 'package:sca_members_clubs/features/profile/domain/entities/family_member.dart';
+import 'package:sca_members_clubs/core/services/session_manager.dart';
+import 'package:sca_members_clubs/core/di/injection_container.dart';
 
 class FamilyMembershipCardScreen extends StatelessWidget {
   final FamilyMember? member;
@@ -209,15 +211,10 @@ class FamilyMembershipCardScreen extends StatelessWidget {
                       ],
                     ),
                     clipBehavior: Clip.antiAlias,
-                    child:
-                        member.image.isNotEmpty &&
-                            member.image.startsWith('assets')
-                        ? Image.asset(member.image, fit: BoxFit.cover)
-                        : const Icon(
-                            Icons.person_rounded,
-                            color: Colors.grey,
-                            size: 80,
-                          ),
+                    child: Image.asset(
+                      'assets/images/user_placeholder.png',
+                      fit: BoxFit.cover,
+                    ),
                   ),
 
                   const SizedBox(height: 12),
@@ -257,35 +254,23 @@ class FamilyMembershipCardScreen extends StatelessWidget {
                     ),
                   ),
 
-                  const Spacer(),
-
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.03),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withOpacity(0.05)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildStatItem("رقم التابع", member.id),
-                        Container(width: 1, height: 30, color: Colors.white12),
-                        _buildStatItem(
-                          "تاريخ الانتهاء",
-                          member.expiryDate.isNotEmpty
-                              ? member.expiryDate
-                              : "---",
-                        ),
-                      ],
-                    ),
+                  // const Spacer(),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildStatItem("رقم التابع", member.id),
+                      // Container(width: 1, height: 30, color: Colors.white12),
+                      // _buildStatItem(
+                      //   "تاريخ الانتهاء",
+                      //   member.expiryDate.isNotEmpty
+                      //       ? member.expiryDate
+                      //       : "---",
+                      // ),
+                    ],
                   ),
 
-                  const SizedBox(height: 12),
-
+                  // const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
@@ -300,7 +285,9 @@ class FamilyMembershipCardScreen extends StatelessWidget {
                       ],
                     ),
                     child: DynamicQrWidget(
-                      memberId: member.id,
+                      memberId:
+                          sl<SessionManager>().getSavedMembershipId() ??
+                          member.id,
                       size: 80,
                       onlyQr: true,
                     ),

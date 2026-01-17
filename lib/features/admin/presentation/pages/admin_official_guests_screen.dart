@@ -29,12 +29,6 @@ class _AdminOfficialGuestsScreenState extends State<AdminOfficialGuestsScreen> {
     return FirebaseService().getOfficialGuests(clubId: _clubId);
   }
 
-  void _refresh() {
-    setState(() {
-      _guestsFuture = _loadGuests();
-    });
-  }
-
   void _showCreateGuestDialog() {
     final nameController = TextEditingController();
     final orgController = TextEditingController();

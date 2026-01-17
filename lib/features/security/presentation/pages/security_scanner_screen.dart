@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sca_members_clubs/core/theme/app_colors.dart';
 import 'package:sca_members_clubs/core/widgets/sca_app_bar.dart';
+import 'package:sca_members_clubs/core/services/firebase_service.dart';
 
 class SecurityScannerScreen extends StatefulWidget {
   const SecurityScannerScreen({super.key});
@@ -12,23 +13,89 @@ class SecurityScannerScreen extends StatefulWidget {
 
 class _SecurityScannerScreenState extends State<SecurityScannerScreen> {
   bool _isScanning = false;
+  final FirebaseService _firebaseService = FirebaseService();
+
+  /// Process scanned QR code
+  /// - If it's an invitation ID: mark as scanned (if not expired)
+  /// - If it's a membership ID: record club visit
+  Future<void> _processScanResult(String qrCode) async {
+    setState(() => _isScanning = true);
+
+    try {
+      Map<String, dynamic> result = {};
+
+      // Determine if QR code is an invitation ID or membership ID
+      // Assumption: Membership-based QR codes might have a specific format
+      // For now, we'll try to determine by attempting both operations
+
+      // First, try as an invitation ID
+      result = await _firebaseService.scanInvitation(qrCode);
+
+      // If invitation not found, try as membership ID
+      if (!result['success'] &&
+          result['type'] == 'error' &&
+          result['message']?.contains('غير موجودة') == true) {
+        result = await _firebaseService.recordClubVisit(qrCode);
+      }
+
+      if (!mounted) return;
+      setState(() => _isScanning = false);
+
+      _showResultDialog(result);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isScanning = false);
+      _showResultDialog({
+        'success': false,
+        'message': 'حدث خطأ: $e',
+        'type': 'error',
+      });
+    }
+  }
 
   void _simulateScan(String type) {
     setState(() => _isScanning = true);
-    
+
     Future.delayed(const Duration(seconds: 2), () {
       if (!mounted) return;
       setState(() => _isScanning = false);
-      
-      _showResultDialog(
-        success: type != 'invalid',
-        title: type == 'invitation' ? "دعوة صالحة" : (type == 'member' ? "عضوية صالحة" : "كود غير صالح"),
-        subtitle: type == 'invitation' ? "الزائر: محمود أحمد\nتاريخ اليوم: 10/01/2026" : "العضو: عطية عبدالله\nرقم العضوية: 12345678",
-      );
+
+      // Simulate different QR code formats
+      String qrCode = '';
+      if (type == 'invitation') {
+        qrCode = 'inv_' + DateTime.now().millisecondsSinceEpoch.toString();
+      } else if (type == 'member') {
+        qrCode = 'mem_12345678'; // Membership ID format
+      } else {
+        qrCode = 'invalid_qr_code';
+      }
+
+      _processScanResult(qrCode);
     });
   }
 
-  void _showResultDialog({required bool success, required String title, required String subtitle}) {
+  void _showResultDialog(Map<String, dynamic> result) {
+    final success = result['success'] == true;
+    final message = result['message'] ?? 'خطأ غير معروف';
+    final type = result['type'] ?? 'error';
+
+    String title = message;
+    String subtitle = '';
+
+    if (type == 'invitation' && success) {
+      subtitle =
+          "الزائر: ${result['visitor_name'] ?? 'زائر'}\nالعضوية: ${result['membership_id'] ?? 'N/A'}";
+    } else if (type == 'membership' && success) {
+      subtitle =
+          "العضو: ${result['member_name'] ?? 'عضو'}\nرقم العضوية: ${result['membership_id'] ?? 'N/A'}";
+    } else if (type == 'expired') {
+      subtitle = 'انتهت صلاحية هذه الدعوة';
+    } else if (type == 'already_scanned') {
+      subtitle = 'تم مسح هذه الدعوة مسبقاً';
+    } else if (!success) {
+      subtitle = message;
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -73,12 +140,17 @@ class _SecurityScannerScreenState extends State<SecurityScannerScreen> {
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: success ? Colors.green : Colors.red,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
                 child: Text(
                   "تم",
-                  style: GoogleFonts.cairo(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.cairo(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -128,7 +200,9 @@ class _SecurityScannerScreenState extends State<SecurityScannerScreen> {
                                   color: Colors.greenAccent,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.greenAccent.withOpacity(0.5),
+                                      color: Colors.greenAccent.withOpacity(
+                                        0.5,
+                                      ),
                                       blurRadius: 10,
                                       spreadRadius: 2,
                                     ),
@@ -156,7 +230,7 @@ class _SecurityScannerScreenState extends State<SecurityScannerScreen> {
               ],
             ),
           ),
-          
+
           // Test Buttons (Since we are in simulator)
           Positioned(
             bottom: 40,
@@ -167,16 +241,28 @@ class _SecurityScannerScreenState extends State<SecurityScannerScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: _buildTestButton("مسح عضوية", Colors.blue, () => _simulateScan('member')),
+                      child: _buildTestButton(
+                        "مسح عضوية",
+                        Colors.blue,
+                        () => _simulateScan('member'),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: _buildTestButton("مسح دعوة", Colors.green, () => _simulateScan('invitation')),
+                      child: _buildTestButton(
+                        "مسح دعوة",
+                        Colors.green,
+                        () => _simulateScan('invitation'),
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                _buildTestButton("اختبار كود خطأ", Colors.red, () => _simulateScan('invalid')),
+                _buildTestButton(
+                  "اختبار كود خطأ",
+                  Colors.red,
+                  () => _simulateScan('invalid'),
+                ),
               ],
             ),
           ),

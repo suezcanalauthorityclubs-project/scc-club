@@ -9,6 +9,7 @@ import 'package:sca_members_clubs/core/di/injection_container.dart';
 import 'package:sca_members_clubs/features/home/presentation/cubit/navigation_cubit.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:sca_members_clubs/core/routes/app_routes.dart';
 
 class MyBookingsScreen extends StatelessWidget {
   const MyBookingsScreen({super.key});
@@ -119,6 +120,18 @@ class _MyBookingsViewState extends State<MyBookingsView> {
                       fontSize: 18,
                     ),
                   ),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.refresh_rounded,
+                        color: AppColors.primary,
+                      ),
+                      onPressed: () {
+                        // Reload booking data
+                        context.read<BookingCubit>().loadBookingData();
+                      },
+                    ),
+                  ],
                   bottom: PreferredSize(
                     preferredSize: const Size.fromHeight(1.0),
                     child: Container(color: Colors.grey[200], height: 1.0),
@@ -253,6 +266,21 @@ class _MyBookingsViewState extends State<MyBookingsView> {
 
                 const SliverToBoxAdapter(child: SizedBox(height: 80)),
               ],
+            ),
+            floatingActionButton: FloatingActionButton.extended(
+              heroTag: "add_booking_fab",
+              onPressed: () {
+                Navigator.pushNamed(context, Routes.booking);
+              },
+              backgroundColor: AppColors.primary,
+              icon: const Icon(Icons.add_rounded, color: Colors.white),
+              label: Text(
+                "حجز جديد",
+                style: GoogleFonts.cairo(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           );
         }
@@ -523,7 +551,6 @@ class _MyBookingsViewState extends State<MyBookingsView> {
   Widget _buildBookingCard(BuildContext context, Booking booking) {
     final serviceName = booking.serviceName;
     final isCompleted = booking.status == "مكتمل";
-    final statusColor = isCompleted ? Colors.grey[700]! : AppColors.success;
     final statusText = booking.status;
 
     // Format Date for Display (Input: yyyy-MM-dd -> Output: 12 Jan 2026)
@@ -650,7 +677,7 @@ class _MyBookingsViewState extends State<MyBookingsView> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      "${booking.totalPrice} ج.م",
+                      booking.price,
                       style: GoogleFonts.cairo(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,

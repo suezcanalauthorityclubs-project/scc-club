@@ -16,17 +16,35 @@ class BookingModel extends Booking {
   });
 
   factory BookingModel.fromMap(Map<String, dynamic> map) {
+    // Determine the numeric value of the cost
+    double costValue = 0.0;
+    final rawCost = map['service_cost'] ?? map['total_price'] ?? 0;
+
+    if (rawCost is num) {
+      costValue = rawCost.toDouble();
+    } else if (rawCost is String) {
+      // Handle legacy string data (e.g., "500 ج.م")
+      costValue =
+          double.tryParse(rawCost.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    }
+
+    // Format price for UI (e.g., "500 ج.م")
+    // If it's a whole number, remove .0
+    final displayPrice = costValue == costValue.toInt()
+        ? "${costValue.toInt()} ج.م"
+        : "$costValue ج.م";
+
     return BookingModel(
       id: map['id'] ?? '',
       serviceName: map['service_name'] ?? map['title'] ?? '',
       date: map['date'] ?? '',
       time: map['time'] ?? '',
       status: map['status'] ?? '',
-      price: map['price'] ?? '',
+      price: displayPrice,
       clubId: map['club_id'] ?? '',
       clubName: map['club_name'] ?? '',
       type: map['type'] ?? '',
-      totalPrice: (map['total_price'] ?? 0).toDouble(),
+      totalPrice: costValue,
       attendeesCount: map['attendees_count'] ?? 0,
     );
   }

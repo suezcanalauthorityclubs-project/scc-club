@@ -1,14 +1,115 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sca_members_clubs/core/theme/app_colors.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:sca_members_clubs/features/profile/presentation/cubit/profile_cubit.dart';
-import 'package:sca_members_clubs/features/profile/presentation/cubit/profile_state.dart';
 import 'package:sca_members_clubs/features/membership/presentation/widgets/dynamic_qr_widget.dart';
-import 'package:sca_members_clubs/core/di/injection_container.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:sca_members_clubs/core/services/session_manager.dart';
+import 'package:get_it/get_it.dart';
 
-class MembershipCardScreen extends StatelessWidget {
+class MembershipCardScreen extends StatefulWidget {
   const MembershipCardScreen({super.key});
+
+  @override
+  State<MembershipCardScreen> createState() => _MembershipCardScreenState();
+}
+
+class _MembershipCardScreenState extends State<MembershipCardScreen> {
+  late Future<Map<String, dynamic>?> _membershipDataFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _membershipDataFuture = _getUserMembershipData();
+  }
+
+  Future<Map<String, dynamic>?> _getUserMembershipData() async {
+    try {
+      final sessionManager = GetIt.instance<SessionManager>();
+      final role = sessionManager.getSavedRole();
+      final membershipId = sessionManager.getSavedMembershipId();
+
+      if (membershipId == null || membershipId.isEmpty) {
+        return {
+          'name': 'مستخدم',
+          'role': _translateRole(role),
+          'membership_id': '---',
+          'membership_type': '---',
+          'job': '---',
+          'membership_status': '---',
+          'photoUrl': null,
+        };
+      }
+
+      // Try first: fetch using membership_id as document ID
+      var membershipDoc = await FirebaseFirestore.instance
+          .collection('main_membership')
+          .doc(membershipId)
+          .get();
+
+      // If not found, try querying where membership_id field equals membershipId
+      if (!membershipDoc.exists) {
+        final query = await FirebaseFirestore.instance
+            .collection('main_membership')
+            .where('membership_id', isEqualTo: membershipId)
+            .limit(1)
+            .get();
+
+        if (query.docs.isNotEmpty) {
+          membershipDoc = query.docs.first;
+        }
+      }
+
+      if (membershipDoc.exists) {
+        final data = membershipDoc.data() ?? {};
+        return {
+          'name': data['name'] ?? 'مستخدم',
+          'role': _translateRole(role),
+          'membership_id': data['membership_id'] ?? membershipId,
+          'membership_type': data['membership_type']?.toString() ?? '---',
+          'job': data['job'] ?? '---',
+          'membership_status': data['membership_status'] ?? '---',
+          'photoUrl': data['photoUrl'],
+        };
+      }
+
+      return {
+        'name': 'مستخدم',
+        'role': _translateRole(role),
+        'membership_id': membershipId,
+        'membership_type': '---',
+        'job': '---',
+        'membership_status': '---',
+        'photoUrl': null,
+      };
+    } catch (e) {
+      print('ERROR: Error fetching membership data: $e');
+      return {
+        'name': 'مستخدم',
+        'role': 'عضو',
+        'membership_id': '---',
+        'membership_type': '---',
+        'job': '---',
+        'membership_status': '---',
+        'photoUrl': null,
+      };
+    }
+  }
+
+  String _translateRole(String? role) {
+    if (role == null) return 'عضو';
+
+    switch (role.toLowerCase()) {
+      case 'member':
+        return 'عضو';
+      case 'wife':
+      case 'child':
+        return 'عضو تابع';
+      case 'security':
+        return 'أمن النادي';
+      default:
+        return 'عضو';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,104 +117,95 @@ class MembershipCardScreen extends StatelessWidget {
         ModalRoute.of(context)?.settings.arguments as String? ??
         "النادي العام لهيئة قناة السويس";
 
-    return BlocProvider(
-      create: (context) => sl<ProfileCubit>()..loadProfile(),
-      child: Scaffold(
-        backgroundColor: const Color(0xFF0F172A), // Darker Navy
-        appBar: AppBar(
-          title: Text(
-            "بطاقة العضوية الذكية",
-            style: GoogleFonts.cairo(
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F172A),
+      appBar: AppBar(
+        title: Text(
+          "بطاقة العضوية الذكية",
+          style: GoogleFonts.cairo(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        centerTitle: true,
+      ),
+      body: FutureBuilder<Map<String, dynamic>?>(
+        future: _membershipDataFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                "خطأ في تحميل البيانات",
+                style: GoogleFonts.cairo(color: Colors.white),
+              ),
+            );
+          }
+
+          final membershipData = snapshot.data ?? {};
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+            child: Column(
+              children: [
+                _buildPremiumCarnet(membershipData, clubName),
+                const SizedBox(height: 40),
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildInfoRow(
+                        Icons.qr_code_2_rounded,
+                        "استخدم الكود الخاص بك للدخول السريع عبر البوابات الإلكترونية.",
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: Divider(color: Colors.white12, height: 1),
+                      ),
+                      _buildInfoRow(
+                        Icons.verified_user_rounded,
+                        "هذه البطاقة رقمية مخصصة للعاملين وأسرهم بهيئة قناة السويس.",
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: Divider(color: Colors.white12, height: 1),
+                      ),
+                      _buildInfoRow(
+                        Icons.sync_rounded,
+                        "يتم تحديث صلاحية البطاقة تلقائياً عند تجديد اشتراك العضوية.",
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 30),
+              ],
             ),
-          ),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-          centerTitle: true,
-        ),
-        body: BlocBuilder<ProfileCubit, ProfileState>(
-          builder: (context, state) {
-            if (state is ProfileLoading) {
-              return const Center(
-                child: CircularProgressIndicator(color: AppColors.primary),
-              );
-            }
-            if (state is ProfileError) {
-              return Center(
-                child: Text(
-                  state.message,
-                  style: GoogleFonts.cairo(color: Colors.white),
-                ),
-              );
-            }
-            if (state is ProfileLoaded) {
-              final user = state.userProfile;
-              return SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(
-                  vertical: 20,
-                  horizontal: 24,
-                ),
-                child: Column(
-                  children: [
-                    // Premium Membership Card
-                    _buildPremiumCarnet(user, clubName),
-
-                    const SizedBox(height: 40),
-
-                    // Information Section with Modern Glass Look
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.1),
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          _buildInfoRow(
-                            Icons.qr_code_2_rounded,
-                            "استخدم الكود الخاص بك للدخول السريع عبر البوابات الإلكترونية.",
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 20),
-                            child: Divider(color: Colors.white12, height: 1),
-                          ),
-                          _buildInfoRow(
-                            Icons.verified_user_rounded,
-                            "هذه البطاقة رقمية مخصصة للعاملين وأسرهم بهيئة قناة السويس.",
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 20),
-                            child: Divider(color: Colors.white12, height: 1),
-                          ),
-                          _buildInfoRow(
-                            Icons.sync_rounded,
-                            "يتم تحديث صلاحية البطاقة تلقائياً عند تجديد اشتراك العضوية.",
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                  ],
-                ),
-              );
-            }
-            return const SizedBox.shrink();
-          },
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildPremiumCarnet(dynamic user, String clubName) {
+  Widget _buildPremiumCarnet(
+    Map<String, dynamic> membershipData,
+    String clubName,
+  ) {
     return AspectRatio(
       aspectRatio: 0.63, // Standard ID Card Ratio but Vertical
       child: Container(
@@ -231,7 +323,7 @@ class MembershipCardScreen extends StatelessWidget {
 
                   // User Name
                   Text(
-                    user.name,
+                    membershipData['name'] ?? 'مستخدم',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.cairo(
                       color: Colors.white,
@@ -257,7 +349,7 @@ class MembershipCardScreen extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      user.membershipType ?? "عضو عامل",
+                      membershipData['membership_type'] ?? "---",
                       style: GoogleFonts.cairo(
                         color: AppColors.primary,
                         fontWeight: FontWeight.bold,
@@ -266,7 +358,8 @@ class MembershipCardScreen extends StatelessWidget {
                     ),
                   ),
 
-                  const Spacer(),
+                  // const Spacer()
+                  const SizedBox(height: 20),
 
                   // Membership Details Box
                   Container(
@@ -276,15 +369,26 @@ class MembershipCardScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: Colors.white.withOpacity(0.05)),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    child: Column(
                       children: [
-                        _buildStatItem("رقم العضوية", user.id),
-                        Container(width: 1, height: 30, color: Colors.white12),
-                        _buildStatItem(
-                          "تاريخ الانتهاء",
-                          "2025/12/31",
-                        ), // Placeholder or user.expiryDate if exists
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildStatItem(
+                              "رقم العضوية",
+                              membershipData['membership_id'] ?? "---",
+                            ),
+                            Container(
+                              width: 1,
+                              height: 30,
+                              color: Colors.white12,
+                            ),
+                            _buildStatItem(
+                              "الوظيفة",
+                              membershipData['job'] ?? "---",
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -306,7 +410,7 @@ class MembershipCardScreen extends StatelessWidget {
                       ],
                     ),
                     child: DynamicQrWidget(
-                      memberId: user.id,
+                      memberId: membershipData['membership_id'] ?? "---",
                       size: 80,
                       onlyQr: true,
                     ),

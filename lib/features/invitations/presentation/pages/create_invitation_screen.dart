@@ -13,8 +13,6 @@ class CreateInvitationScreen extends StatefulWidget {
 }
 
 class _CreateInvitationScreenState extends State<CreateInvitationScreen> {
-  final _formKey = GlobalKey<FormState>();
-
   // Invitation Options
   List<Map<String, dynamic>> _clubs = [];
   String? _selectedClubId;
@@ -31,6 +29,7 @@ class _CreateInvitationScreenState extends State<CreateInvitationScreen> {
 
   // List of guests added to the table
   final List<GuestData> _addedGuests = [];
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -298,8 +297,9 @@ class _CreateInvitationScreenState extends State<CreateInvitationScreen> {
               const SizedBox(height: 32),
               PrimaryButton(
                 text: "تأكيد وإصدار التصاريح",
-                onPressed: _issueAllInvitations,
+                onPressed: () => _issueAllInvitations(),
                 suffixIcon: Icons.check_circle_rounded,
+                isLoading: _isLoading,
               ),
             ],
             const SizedBox(height: 40),
@@ -557,41 +557,65 @@ class _CreateInvitationScreenState extends State<CreateInvitationScreen> {
   }
 
   Future<void> _issueAllInvitations() async {
-    for (var guest in _addedGuests) {
-      // Expiry is at the end of the selected day (11:59:59 PM)
-      final expiryDate = DateTime(
-        guest.date.year,
-        guest.date.month,
-        guest.date.day,
-        23,
-        59,
-        59,
-      );
+    setState(() => _isLoading = true);
+    try {
+      for (var guest in _addedGuests) {
+        // Build visit dates
+        final visitDate = DateTime(
+          guest.date.year,
+          guest.date.month,
+          guest.date.day,
+        );
 
-      await FirebaseService().createInvitation({
-        "guest_name": guest.name ?? "في وجود العضو",
-        "national_id": guest.id ?? "N/A",
-        "date": "${guest.date.day}/${guest.date.month}/${guest.date.year}",
-        "guest_count": guest.guestCount,
-        "expiry": expiryDate.toIso8601String(),
-        "club_id": guest.clubId,
-        "club_name": guest.clubName,
-        "type": guest.type,
-        "phone": guest.phone,
-      });
-    }
+        // Expiry is at the end of the selected day (11:59:59 PM)
+        final expiryDate = DateTime(
+          guest.date.year,
+          guest.date.month,
+          guest.date.day,
+          23,
+          59,
+          59,
+        );
 
-    if (mounted) {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "تم إنشاء ${_addedGuests.length} دعوة بنجاح",
-            style: GoogleFonts.cairo(),
+        // Build invitation data according to Firestore schema
+        final Map<String, dynamic> invitationData = {
+          "type": guest.type, // "بدون عضو" or "في وجود العضو"
+          "visit_date": visitDate,
+          "visit_expiration_date": expiryDate,
+        };
+
+        // Add conditional fields based on invitation type
+        if (guest.type == "بدون عضو") {
+          invitationData["visitor_name"] = guest.name ?? "";
+          invitationData["national_id"] = guest.id ?? "";
+          invitationData["visitor_phone_number"] = guest.phone ?? "";
+        } else {
+          invitationData["number_of_visitors"] = guest.guestCount;
+        }
+
+        await FirebaseService().createInvitation(invitationData);
+      }
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "تم إنشاء ${_addedGuests.length} دعوة بنجاح",
+              style: GoogleFonts.cairo(),
+            ),
+            backgroundColor: AppColors.success,
           ),
-          backgroundColor: AppColors.success,
-        ),
-      );
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        _showError("حدث خطأ أثناء إنشاء الدعوات: $e");
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

@@ -1,5 +1,8 @@
 import 'package:get_it/get_it.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sca_members_clubs/core/services/firebase_service.dart';
+import 'package:sca_members_clubs/core/services/session_manager.dart';
 import 'package:sca_members_clubs/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:sca_members_clubs/features/home/presentation/cubit/home_cubit.dart';
 import 'package:sca_members_clubs/features/news/presentation/cubit/news_cubit.dart';
@@ -31,9 +34,22 @@ Future<void> init() async {
   // Services
   sl.registerLazySingleton<FirebaseService>(() => FirebaseService());
 
+  // Shared Preferences
+  final prefs = await SharedPreferences.getInstance();
+  sl.registerLazySingleton<SharedPreferences>(() => prefs);
+
+  // Session Manager
+  sl.registerLazySingleton<SessionManager>(
+    () => SessionManager(sl<SharedPreferences>()),
+  );
+
+  // Firestore
+  sl.registerLazySingleton<FirebaseFirestore>(() => FirebaseFirestore.instance);
+
   // Data Sources
   sl.registerLazySingleton<AuthRemoteDataSource>(
-    () => AuthRemoteDataSourceImpl(sl()),
+    () =>
+        AuthRemoteDataSourceImpl(sl<FirebaseFirestore>(), sl<SessionManager>()),
   );
 
   // Repositories

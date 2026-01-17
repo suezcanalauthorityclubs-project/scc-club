@@ -7,8 +7,6 @@ import 'package:sca_members_clubs/core/widgets/primary_button.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sca_members_clubs/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:sca_members_clubs/features/auth/presentation/cubit/auth_state.dart';
-import 'package:sca_members_clubs/core/services/biometric_service.dart';
-import 'package:sca_members_clubs/core/services/secure_storage_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,48 +20,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
-  final BiometricService _biometricService = BiometricService();
-  final SecureStorageService _secureStorage = SecureStorageService();
-  bool _canCheckBiometrics = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkBiometrics();
-  }
-
-  Future<void> _checkBiometrics() async {
-    final available = await _biometricService.isBiometricAvailable();
-    if (mounted) {
-      setState(() {
-        _canCheckBiometrics = available;
-      });
-    }
-  }
-
-  Future<void> _onBiometricLoginPressed(BuildContext context) async {
-    final authenticated = await _biometricService.authenticate();
-    if (authenticated && mounted) {
-      // Retrieve stored credentials
-      final credentials = await _secureStorage.getCredentials();
-      if (credentials != null) {
-        context.read<AuthCubit>().login(
-          credentials['email']!,
-          credentials['password']!,
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'لا توجد بيانات محفوظة. يرجى تسجيل الدخول بكلمة المرور أولاً',
-              style: GoogleFonts.cairo(),
-            ),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
-  }
 
   void _onLoginPressed(BuildContext context) {
     if (_formKey.currentState!.validate()) {
@@ -77,22 +33,11 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<AuthCubit, AuthState>(
-      listener: (context, state) async {
+      listener: (context, state) {
         if (state is AuthAuthenticated) {
-          // Save credentials securely for biometric login
-          if (_usernameController.text.isNotEmpty &&
-              _passwordController.text.isNotEmpty) {
-            await _secureStorage.saveCredentials(
-              _usernameController.text,
-              _passwordController.text,
-            );
-          }
-
-          final user = state.user;
-          if (user.role == 'security') {
+          // Navigate based on user role
+          if (state.user.role.toLowerCase() == 'security') {
             Navigator.pushReplacementNamed(context, '/security_dashboard');
-          } else if (user.role == 'admin') {
-            Navigator.pushReplacementNamed(context, '/admin');
           } else {
             Navigator.pushReplacementNamed(context, '/home');
           }
@@ -259,48 +204,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                           color: AppColors.primary,
                                         ),
                                       )
-                                    : Column(
-                                        children: [
-                                          PrimaryButton(
-                                            text: "دخول",
-                                            onPressed: () =>
-                                                _onLoginPressed(context),
-                                          ),
-                                          if (_canCheckBiometrics) ...[
-                                            const SizedBox(height: 16),
-                                            OutlinedButton.icon(
-                                              onPressed: () =>
-                                                  _onBiometricLoginPressed(
-                                                    context,
-                                                  ),
-                                              icon: const Icon(
-                                                Icons.fingerprint,
-                                                color: AppColors.primary,
-                                              ),
-                                              label: Text(
-                                                "الدخول بالبصمة",
-                                                style: GoogleFonts.cairo(
-                                                  color: AppColors.primary,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                              style: OutlinedButton.styleFrom(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      vertical: 12,
-                                                      horizontal: 24,
-                                                    ),
-                                                side: const BorderSide(
-                                                  color: AppColors.primary,
-                                                ),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ],
+                                    : PrimaryButton(
+                                        text: "دخول",
+                                        onPressed: () =>
+                                            _onLoginPressed(context),
                                       ),
                               ],
                             ),

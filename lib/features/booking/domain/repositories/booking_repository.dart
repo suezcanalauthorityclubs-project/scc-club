@@ -3,6 +3,7 @@ import 'package:sca_members_clubs/features/booking/domain/entities/service.dart'
 
 abstract class BookingRepository {
   Future<List<Booking>> getBookings({String? clubId});
+  Stream<List<Booking>> getBookingsStream({String? clubId});
   Future<List<Service>> getServices({String? clubId});
   Future<List<String>> getMembershipTypes();
   Future<void> addBooking(

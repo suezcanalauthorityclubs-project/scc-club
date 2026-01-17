@@ -10,7 +10,9 @@ import '../cubit/home_cubit.dart';
 import '../cubit/home_state.dart';
 import 'package:sca_members_clubs/core/di/injection_container.dart';
 import '../widgets/greeting_widget.dart';
-import 'package:sca_members_clubs/core/services/firebase_service.dart';
+import 'package:sca_members_clubs/core/services/session_manager.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:get_it/get_it.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -37,6 +39,50 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
+  late Future<String?> _membershipNameFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _membershipNameFuture = _getMembershipName();
+  }
+
+  Future<String?> _getMembershipName() async {
+    final sessionManager = GetIt.instance<SessionManager>();
+    final membershipId = sessionManager.getSavedMembershipId();
+
+    if (membershipId == null) return null;
+
+    try {
+      // Try document ID first
+      var membershipDoc = await FirebaseFirestore.instance
+          .collection('main_membership')
+          .doc(membershipId)
+          .get();
+
+      // Fallback to field query if document doesn't exist
+      if (!membershipDoc.exists) {
+        final query = await FirebaseFirestore.instance
+            .collection('main_membership')
+            .where('membership_id', isEqualTo: membershipId)
+            .limit(1)
+            .get();
+        if (query.docs.isNotEmpty) {
+          membershipDoc = query.docs.first;
+        }
+      }
+
+      if (membershipDoc.exists) {
+        final name = membershipDoc.data()?['name'];
+        return name?.toString();
+      }
+    } catch (e) {
+      print('Error fetching membership name: $e');
+    }
+
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<HomeCubit, HomeState>(
@@ -61,11 +107,12 @@ class _HomeViewState extends State<HomeView> {
                   SizedBox(height: kToolbarHeight + 20.h),
 
                   // Dynamic Greeting
-                  FutureBuilder<Map<String, dynamic>>(
-                    future: FirebaseService().getUserProfile(),
+                  FutureBuilder<String?>(
+                    future: _membershipNameFuture,
+                    // initialData: GetIt.instance<SessionManager>().getSavedUsername() ?? "عضو الهيئة",
                     builder: (context, snapshot) {
-                      final name = snapshot.data?['name'] ?? "عضو الهيئة";
-                      return GreetingWidget(userName: name);
+                      final userName = snapshot.data ?? "";
+                      return GreetingWidget(userName: userName);
                     },
                   ),
 
@@ -172,7 +219,7 @@ class _HomeViewState extends State<HomeView> {
                     ),
                     SizedBox(height: 16.h),
                     SizedBox(
-                      height: 310.h,
+                      height: 340.h,
                       child: ListView.builder(
                         padding: EdgeInsets.symmetric(horizontal: 20.w),
                         scrollDirection: Axis.horizontal,

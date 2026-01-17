@@ -7,10 +7,26 @@ class AuthCubit extends Cubit<AuthState> {
 
   AuthCubit(this._authRepository) : super(AuthInitial());
 
-  Future<void> login(String identifier, String password) async {
+  /// Check if user has existing session on app startup
+  Future<void> checkExistingSession() async {
     emit(AuthLoading());
     try {
-      final user = await _authRepository.login(identifier, password);
+      final user = await _authRepository.getCurrentUser();
+      if (user != null) {
+        emit(AuthSessionRestored(user));
+      } else {
+        emit(AuthUnauthenticated());
+      }
+    } catch (e) {
+      emit(AuthUnauthenticated());
+    }
+  }
+
+  /// Login with username and password
+  Future<void> login(String username, String password) async {
+    emit(AuthLoading());
+    try {
+      final user = await _authRepository.login(username, password);
       if (user != null) {
         emit(AuthAuthenticated(user));
       } else {
@@ -21,8 +37,13 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  /// Logout and clear session
   Future<void> logout() async {
-    await _authRepository.logout();
-    emit(AuthUnauthenticated());
+    try {
+      await _authRepository.logout();
+      emit(AuthUnauthenticated());
+    } catch (e) {
+      emit(AuthError("خطأ في تسجيل الخروج: ${e.toString()}"));
+    }
   }
 }

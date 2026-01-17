@@ -39,6 +39,8 @@ class _BookingFormViewState extends State<BookingFormView> {
   int _attendeesCount = 1;
   bool _isSelfBooking = true;
   final TextEditingController _guestNameController = TextEditingController();
+  final TextEditingController _guestNationalIdController =
+      TextEditingController();
   final TextEditingController _guestPhoneController = TextEditingController();
 
   // Club Selection
@@ -75,6 +77,7 @@ class _BookingFormViewState extends State<BookingFormView> {
   void dispose() {
     _notesController.dispose();
     _guestNameController.dispose();
+    _guestNationalIdController.dispose();
     _guestPhoneController.dispose();
     super.dispose();
   }
@@ -343,7 +346,7 @@ class _BookingFormViewState extends State<BookingFormView> {
                         Expanded(
                           child: RadioListTile<bool>(
                             title: Text(
-                              "لنفسي",
+                              "عضو",
                               style: GoogleFonts.cairo(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
@@ -363,7 +366,7 @@ class _BookingFormViewState extends State<BookingFormView> {
                         Expanded(
                           child: RadioListTile<bool>(
                             title: Text(
-                              "لشخص آخر",
+                              "أقارب",
                               style: GoogleFonts.cairo(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
@@ -395,6 +398,13 @@ class _BookingFormViewState extends State<BookingFormView> {
                       controller: _guestNameController,
                       style: GoogleFonts.cairo(),
                       decoration: _buildInputDecoration("اسم المحجوز له"),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _guestNationalIdController,
+                      style: GoogleFonts.cairo(),
+                      keyboardType: TextInputType.number,
+                      decoration: _buildInputDecoration("رقم الهوية"),
                     ),
                     const SizedBox(height: 16),
                     TextField(
@@ -627,12 +637,8 @@ class _BookingFormViewState extends State<BookingFormView> {
   }
 
   int _calculateTotalForPhotoSession() {
-    // Parse base price from string "500 ج.م" -> 500
-    // Simplified parsing assuming format digits + space
-    int basePrice = 500;
-    // If I wanted to support differentiating Member vs Guest price base, I'd do it here:
-    // if (!_isSelfBooking) basePrice = 600;
-
+    // Base price: 300 for Members (Self), 500 for Guests
+    int basePrice = _isSelfBooking ? 300 : 500;
     return basePrice + _calculateExtraFees();
   }
 
@@ -688,6 +694,7 @@ class _BookingFormViewState extends State<BookingFormView> {
       finalService['total_price'] = _calculateTotalForPhotoSession();
       if (!_isSelfBooking) {
         finalService['guest_name'] = _guestNameController.text;
+        finalService['guest_national_id'] = _guestNationalIdController.text;
         finalService['guest_phone'] = _guestPhoneController.text;
       }
       finalService['club_id'] = _selectedClubId;
