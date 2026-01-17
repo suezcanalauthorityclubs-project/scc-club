@@ -356,6 +356,108 @@ class FirebaseService {
     }
   }
 
+  /// Fetch ALL invitations (Firestore + Mock) for Security Screen
+  Future<List<Map<String, dynamic>>> getAllInvitations() async {
+    try {
+      // 1. Fetch from Firestore
+      final snapshot = await _db.collection('invitations').get();
+
+      final firestoreInvitations = snapshot.docs.map((doc) {
+        final data = doc.data();
+        String formattedDate = "";
+        if (data['visit_date'] is Timestamp) {
+          final date = (data['visit_date'] as Timestamp).toDate();
+          formattedDate = "${date.day}/${date.month}/${date.year}";
+        }
+
+        return {
+          ...data,
+          'id': doc.id,
+          'guest_name': data['type'] == 'بدون عضو'
+              ? (data['visitor_name'] ?? "زائر")
+              : "في وجود العضو",
+          'national_id': data['national_id'] ?? "N/A", // Important for search
+          'guest_count': data['number_of_visitors'] ?? 1,
+          'status': data['status'] ?? "active",
+          'date': formattedDate,
+          'source': 'app', // To distinguish if needed
+        };
+      }).toList();
+
+      // 2. Fetch from Mock Data (Static)
+      final staticInvitations = MockData.invitations
+          .map((inv) => {...inv, 'source': 'static'})
+          .toList();
+
+      // 3. Merge Lists
+      final allInvitations = [...firestoreInvitations, ...staticInvitations];
+
+      // 4. Sort by date (descending)
+      // Note: Static dates are strings "DD/MM/YYYY", Firestore formatted dates are also strings "D/M/YYYY"
+      // Ideally should sort by actual date object, but simple reverse order might suffice for now
+      // or just keep them appended.
+      // Let's rely on list order for now or try basic string sort if needed
+
+      return allInvitations;
+    } catch (e) {
+      print('❌ Error fetching all invitations: $e');
+      // Fallback to just mock data if firestore fails
+      return MockData.invitations;
+    }
+  }
+
+  /// Stream of ALL invitations (Firestore + Mock) for Security Screen
+  Stream<List<Map<String, dynamic>>> getAllInvitationsStream() {
+    return _db.collection('invitations').snapshots().map((snapshot) {
+      try {
+        final firestoreInvitations = snapshot.docs.map((doc) {
+          final data = doc.data();
+          String formattedDate = "";
+          if (data['visit_date'] is Timestamp) {
+            final date = (data['visit_date'] as Timestamp).toDate();
+            formattedDate = "${date.day}/${date.month}/${date.year}";
+          }
+
+          return {
+            ...data,
+            'id': doc.id,
+            'guest_name': data['type'] == 'بدون عضو'
+                ? (data['visitor_name'] ?? "زائر")
+                : "في وجود العضو",
+            'national_id': data['national_id'] ?? "N/A", // Important for search
+            'guest_count': data['number_of_visitors'] ?? 1,
+            'status': data['status'] ?? "active",
+            'date': formattedDate,
+            'source': 'app',
+          };
+        }).toList();
+
+        // Fetch from Mock Data (Static)
+        final staticInvitations = MockData.invitations
+            .map((inv) => {...inv, 'source': 'static'})
+            .toList();
+
+        // Merge Lists
+        final allInvitations = [...firestoreInvitations, ...staticInvitations];
+
+        // Sort by created_at desc if available (newest first)
+        allInvitations.sort((a, b) {
+          final aTime = a['created_at'];
+          final bTime = b['created_at'];
+          if (aTime is Timestamp && bTime is Timestamp) {
+            return bTime.compareTo(aTime);
+          }
+          return 0; // Keep existing order for non-timestamped items (like mock data)
+        });
+
+        return allInvitations;
+      } catch (e) {
+        print('❌ Error in getAllInvitationsStream mapping: $e');
+        return MockData.invitations;
+      }
+    });
+  }
+
   Future<List<Map<String, dynamic>>> getInvitationCards() async {
     try {
       // Initialize session manager from DI if not already done
