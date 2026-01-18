@@ -93,7 +93,7 @@ class EventCard extends StatelessWidget {
                         style: GoogleFonts.cairo(color: Colors.grey, fontSize: 12),
                       ),
                     ),
-                  ],
+                    ],
                 ),
                 const SizedBox(height: 4),
                 Row(
