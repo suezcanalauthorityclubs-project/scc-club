@@ -1,0 +1,32 @@
+import 'package:equatable/equatable.dart';
+import 'package:sca_members_clubs/features/news/domain/entities/event.dart';
+import 'package:sca_members_clubs/features/news/domain/entities/news_article.dart';
+
+abstract class NewsState extends Equatable {
+  const NewsState();
+
+  @override
+  List<Object?> get props => [];
+}
+
+class NewsInitial extends NewsState {}
+
+class NewsLoading extends NewsState {}
+
+class NewsLoaded extends NewsState {
+  final List<NewsArticle> news;
+  final List<Event> events;
+
+  const NewsLoaded(this.news, this.events);
+
+  @override
+  List<Object?> get props => [news, events];
+}
+
+class NewsError extends NewsState {
+  final String message;
+  const NewsError(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
