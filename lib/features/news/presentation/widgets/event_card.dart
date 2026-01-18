@@ -74,6 +74,8 @@ class EventCard extends StatelessWidget {
               children: [
                 Text(
                   title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.cairo(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -84,16 +86,26 @@ class EventCard extends StatelessWidget {
                   children: [
                     const Icon(Icons.access_time, size: 14, color: Colors.grey),
                     const SizedBox(width: 4),
-                    Text(
-                      time,
-                      style: GoogleFonts.cairo(color: Colors.grey, fontSize: 12),
+                    Flexible(
+                      child: Text(
+                        time,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.cairo(color: Colors.grey, fontSize: 12),
+                      ),
                     ),
-                    const SizedBox(width: 16),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
                     const Icon(Icons.location_on, size: 14, color: Colors.grey),
                     const SizedBox(width: 4),
-                    Text(
-                      location,
-                      style: GoogleFonts.cairo(color: Colors.grey, fontSize: 12),
+                    Flexible(
+                      child: Text(
+                        location,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.cairo(color: Colors.grey, fontSize: 12),
+                      ),
                     ),
                   ],
                 ),
