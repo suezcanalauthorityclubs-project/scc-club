@@ -107,7 +107,10 @@ class _PromoBannerState extends State<PromoBanner> {
                         ),
                       ),
                       Padding(
-                        padding: EdgeInsets.all(24.w),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 24.w,
+                          vertical: 12.h,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,

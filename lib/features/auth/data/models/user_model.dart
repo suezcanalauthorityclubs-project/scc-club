@@ -11,7 +11,7 @@ class UserModel extends UserEntity {
   factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
       id: map['id'] ?? '',
-      username: map['username'] ?? '',
+      username: map['username'] ?? map['name'] ?? '',
       role: map['role'] ?? 'member',
       membershipId: map['membership_id'],
     );

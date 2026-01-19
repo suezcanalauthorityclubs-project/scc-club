@@ -7,6 +7,7 @@ import 'package:sca_members_clubs/core/widgets/primary_button.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sca_members_clubs/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:sca_members_clubs/features/auth/presentation/cubit/auth_state.dart';
+import 'package:sca_members_clubs/core/routes/app_routes.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -209,6 +210,23 @@ class _LoginScreenState extends State<LoginScreen> {
                                         onPressed: () =>
                                             _onLoginPressed(context),
                                       ),
+                                const SizedBox(height: 16),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pushNamed(
+                                      context,
+                                      Routes.support,
+                                    );
+                                  },
+                                  child: Text(
+                                    "تواصل معنا",
+                                    style: GoogleFonts.cairo(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14.sp,
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),

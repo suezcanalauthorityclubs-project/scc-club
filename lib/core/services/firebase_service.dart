@@ -50,6 +50,46 @@ class FirebaseService {
 
   Future<Map<String, dynamic>> getUserProfile() async {
     await _simulateDelay();
+    try {
+      _sessionManager ??= sl<SessionManager>();
+      final membershipId = _sessionManager?.getSavedMembershipId();
+
+      if (membershipId != null && membershipId.isNotEmpty) {
+        // Try fetch using membership_id as document ID
+        var doc = await _db
+            .collection('main_membership')
+            .doc(membershipId)
+            .get();
+
+        // If not found, try querying by field
+        if (!doc.exists) {
+          final query = await _db
+              .collection('main_membership')
+              .where('membership_id', isEqualTo: membershipId)
+              .limit(1)
+              .get();
+          if (query.docs.isNotEmpty) {
+            doc = query.docs.first;
+          }
+        }
+
+        if (doc.exists) {
+          final data = doc.data()!;
+          return {
+            ...MockData.memberProfile, // Keep defaults
+            ...data,
+            // Ensure essential fields map correctly to UserModel
+            'id': doc.id,
+            'username': data['name'], // Map name to username for UserModel
+            'name': data['name'],
+            'membership_id': data['membership_id'] ?? membershipId,
+            'role': _sessionManager?.getSavedRole() ?? data['role'] ?? 'member',
+          };
+        }
+      }
+    } catch (e) {
+      print('Error fetching profile from Firestore: $e');
+    }
     return _currentUser ?? MockData.memberProfile;
   }
 
